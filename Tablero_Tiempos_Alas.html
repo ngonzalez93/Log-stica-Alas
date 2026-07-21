@@ -16,17 +16,17 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#EBEEE9; --surface:#FFFFFF; --ink:#16211C; --muted:#68766D;
-  --teal:#0F6E56; --teal-600:#0B5744; --mint:#DCEFE7;
-  --amber:#B45309; --amber-bg:#F6E7CF; --gray-seg:#B9BEB6;
-  --line:#E0E4DE; --radius:14px;
-  --shadow:0 1px 2px rgba(22,33,28,.04),0 8px 24px rgba(22,33,28,.05);
+  --bg:#F4F6FA; --surface:#FFFFFF; --ink:#0F1B2E; --muted:#64748B;
+  --teal:#1D4ED8; --teal-600:#1E40AF; --mint:#DBEAFE;
+  --amber:#EA580C; --amber-bg:#FDE7D3; --gray-seg:#94A3B8;
+  --line:#E2E8F0; --radius:14px;
+  --shadow:0 1px 2px rgba(15,27,46,.04),0 8px 24px rgba(15,27,46,.06);
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--ink);
   font-family:'Inter',system-ui,sans-serif;line-height:1.5;
-  background-image:radial-gradient(circle at 1px 1px,rgba(15,110,86,.05) 1px,transparent 0);
+  background-image:radial-gradient(circle at 1px 1px,rgba(29,78,216,.05) 1px,transparent 0);
   background-size:22px 22px;}
 .wrap{max-width:1180px;margin:0 auto;padding:28px 20px 64px}
 
@@ -117,9 +117,9 @@ footer{margin-top:30px;font-size:12px;color:var(--muted);text-align:center}
       <p class="hint">Cada barra es el TTA promedio, dividido en los tres tramos. Así ves qué parte controla tu equipo (T2) y qué parte no.</p>
       <div class="chartbox tall"><canvas id="stackChart"></canvas></div>
       <div class="legend">
-        <span><i class="dot" style="background:#D9A441"></i>T1 · Administrativo (autorización y facturación)</span>
-        <span><i class="dot" style="background:#0F6E56"></i>T2 · Preparación (empaque)</span>
-        <span><i class="dot" style="background:#B9BEB6"></i>T3 · Espera del cliente</span>
+        <span><i class="dot" style="background:#EA580C"></i>T1 · Administrativo (autorización y facturación)</span>
+        <span><i class="dot" style="background:#1D4ED8"></i>T2 · Preparación (empaque)</span>
+        <span><i class="dot" style="background:#94A3B8"></i>T3 · Espera del cliente</span>
       </div>
     </div>
 
@@ -152,8 +152,8 @@ footer{margin-top:30px;font-size:12px;color:var(--muted);text-align:center}
 </div>
 
 <script>
-const C = { teal:'#0F6E56', amber:'#D9A441', gray:'#B9BEB6', ink:'#16211C', muted:'#68766D',
-            mint:'#DCEFE7', red:'#B45309', line:'#E0E4DE' };
+const C = { teal:'#1D4ED8', amber:'#EA580C', gray:'#94A3B8', ink:'#0F1B2E', muted:'#64748B',
+            mint:'#DBEAFE', red:'#DC2626', line:'#E2E8F0' };
 const FLOWS = ['Compra','Retiro','Ferretería WMS'];
 
 // Datos de ejemplo (coinciden con la plantilla Excel)
@@ -236,7 +236,7 @@ function renderQuality(k){
 const baseOpts = {
   responsive:true, maintainAspectRatio:false,
   plugins:{legend:{display:false}, tooltip:{
-    backgroundColor:'#16211C', padding:10, cornerRadius:8, titleFont:{family:'Space Grotesk'},
+    backgroundColor:'#0F1B2E', padding:10, cornerRadius:8, titleFont:{family:'Space Grotesk'},
     bodyFont:{family:'Inter'} }},
   animation:{duration:500}
 };
@@ -262,7 +262,7 @@ function drawCharts(k){
   // TTA by flow
   charts.tta=new Chart(document.getElementById('ttaChart'),{
     type:'bar',
-    data:{labels:FLOWS,datasets:[{data:k.ttaByFlow,backgroundColor:[C.teal,'#3E8E77','#6BAE9C'],borderRadius:6,barThickness:52}]},
+    data:{labels:FLOWS,datasets:[{data:k.ttaByFlow,backgroundColor:[C.teal,'#3B82F6','#60A5FA'],borderRadius:6,barThickness:52}]},
     options:{...baseOpts,scales:{y:{...gridY,beginAtZero:true},x:plainX},
       plugins:{...baseOpts.plugins,tooltip:{...baseOpts.plugins.tooltip,callbacks:{label:c=>` ${fmt(c.raw)} min`}}}}
   });
@@ -278,7 +278,7 @@ function drawCharts(k){
   // Trend
   charts.trend=new Chart(document.getElementById('trendChart'),{
     type:'line',
-    data:{labels:k.trend.days,datasets:[{data:k.trend.vals,borderColor:C.teal,backgroundColor:'rgba(15,110,86,.10)',
+    data:{labels:k.trend.days,datasets:[{data:k.trend.vals,borderColor:C.teal,backgroundColor:'rgba(29,78,216,.10)',
       fill:true,tension:.3,pointBackgroundColor:C.teal,pointRadius:4,borderWidth:2.5}]},
     options:{...baseOpts,scales:{y:{...gridY,beginAtZero:true},x:{...plainX,ticks:{...plainX.ticks,font:{family:'Inter',size:11}}}},
       plugins:{...baseOpts.plugins,tooltip:{...baseOpts.plugins.tooltip,callbacks:{label:c=>` TTA ${fmt(c.raw)} min`}}}}
