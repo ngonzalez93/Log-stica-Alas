@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Administración de usuarios — Alas</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/config.js"></script>
+<script src="assets/modules.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F4F6FA; --surface:#FFFFFF; --ink:#0F1B2E; --muted:#64748B;
+  --blue:#1D4ED8; --blue-600:#1E40AF; --blue-soft:#DBEAFE; --line:#E2E8F0;
+  --red:#DC2626; --orange:#EA580C; --green:#16A34A;
+  --radius:14px; --shadow:0 1px 2px rgba(15,27,46,.04),0 8px 24px rgba(15,27,46,.06);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Inter',system-ui,sans-serif;line-height:1.5;
+  background-image:radial-gradient(circle at 1px 1px,rgba(29,78,216,.05) 1px,transparent 0);background-size:22px 22px}
+.wrap{max-width:1080px;margin:0 auto;padding:32px 20px 64px}
+a.back{color:var(--muted);text-decoration:none;font-size:13px;display:inline-flex;align-items:center;gap:6px}
+a.back:hover{color:var(--blue)}
+.eyebrow{font-family:'Space Grotesk';font-weight:600;font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--blue);display:flex;align-items:center;gap:8px;margin-top:16px}
+.eyebrow::before{content:"";width:22px;height:2px;background:var(--blue)}
+h1{font-family:'Space Grotesk';font-weight:600;font-size:27px;margin:8px 0 0;letter-spacing:-.01em}
+.sub{color:var(--muted);font-size:14px;margin-top:6px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);
+  padding:22px;margin-top:24px}
+.card h2{font-family:'Space Grotesk';font-weight:600;font-size:16px;margin:0 0 16px}
+.form-row{display:grid;grid-template-columns:1fr 1fr 160px auto;gap:12px;align-items:end}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.04em;margin-bottom:6px}
+.field input,.field select{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:9px;
+  font-size:14px;font-family:'Inter';background:var(--bg)}
+.field input:focus,.field select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft)}
+.btn{background:var(--blue);color:#fff;font-family:'Space Grotesk';font-weight:500;font-size:14px;
+  padding:11px 18px;border:none;border-radius:9px;cursor:pointer;transition:background .15s;white-space:nowrap}
+.btn:hover{background:var(--blue-600)}
+.btn:disabled{opacity:.6;cursor:default}
+.btn.ghost{background:none;color:var(--muted);border:1px solid var(--line)}
+.btn.ghost:hover{border-color:var(--blue);color:var(--blue);background:none}
+.btn.danger{background:none;color:var(--red);border:1px solid #F3C6C6}
+.btn.danger:hover{background:#FEecec}
+.btn.sm{padding:7px 12px;font-size:13px}
+.mods{margin-top:14px;display:none}
+.mods.show{display:block}
+.modgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px;margin-top:8px}
+.modchk{display:flex;align-items:center;gap:9px;padding:9px 11px;border:1px solid var(--line);border-radius:9px;
+  font-size:13px;cursor:pointer;background:var(--bg)}
+.modchk input{accent-color:var(--blue);width:16px;height:16px}
+.msg{margin-top:12px;font-size:13px;min-height:18px}
+.msg.err{color:var(--red)} .msg.ok{color:var(--green)}
+table{width:100%;border-collapse:collapse;margin-top:6px;font-size:14px}
+th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);
+  font-weight:600;padding:10px 12px;border-bottom:1px solid var(--line)}
+td{padding:12px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+.pill{display:inline-block;font-size:11px;font-weight:600;padding:2px 9px;border-radius:20px;text-transform:capitalize}
+.pill.superadmin{background:#FEE2E2;color:#B91C1C}
+.pill.admin{background:var(--blue-soft);color:var(--blue-600)}
+.pill.operador{background:#E2E8F0;color:#475569}
+.modtags{display:flex;flex-wrap:wrap;gap:4px}
+.modtag{font-size:11px;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:2px 7px;color:var(--muted)}
+.actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.loading{color:var(--muted);font-size:14px;padding:16px 0}
+
+/* modal */
+.overlay{position:fixed;inset:0;background:rgba(15,27,46,.45);display:none;align-items:center;justify-content:center;
+  z-index:100;padding:20px}
+.overlay.show{display:flex}
+.modal{background:var(--surface);border-radius:var(--radius);box-shadow:0 20px 60px rgba(15,27,46,.25);
+  width:100%;max-width:460px;padding:24px;position:relative}
+.modal h3{font-family:'Space Grotesk';font-size:18px;margin:0 0 4px}
+.modal .who2{color:var(--muted);font-size:13px;margin-bottom:16px}
+.modal .x{position:absolute;top:14px;right:16px;border:none;background:none;font-size:22px;color:var(--muted);cursor:pointer}
+.modfoot{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
+@media(max-width:720px){.form-row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app" style="visibility:hidden">
+  <a class="back" href="index.html">← Volver al menú</a>
+  <div class="eyebrow">Alas · Administración</div>
+  <h1>Usuarios y permisos</h1>
+  <div class="sub">Creá usuarios, asigná su rol y limitá qué módulos puede ver cada operador.</div>
+
+  <!-- Crear usuario -->
+  <div class="card">
+    <h2>Nuevo usuario</h2>
+    <div class="form-row">
+      <div class="field"><label for="nUser">Usuario</label>
+        <input type="text" id="nUser" autocapitalize="none" spellcheck="false" placeholder="ej: jperez"></div>
+      <div class="field"><label for="nPass">Contraseña</label>
+        <input type="text" id="nPass" placeholder="mínimo 6 caracteres"></div>
+      <div class="field"><label for="nRole">Rol</label>
+        <select id="nRole"><option value="operador">Operador</option><option value="admin">Administrador</option></select></div>
+      <div class="field"><button class="btn" id="btnCreate">Crear usuario</button></div>
+    </div>
+    <div class="mods show" id="nModsWrap">
+      <label style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Módulos habilitados (operador)</label>
+      <div class="modgrid" id="nMods"></div>
+    </div>
+    <div class="msg" id="createMsg"></div>
+  </div>
+
+  <!-- Lista de usuarios -->
+  <div class="card">
+    <h2>Usuarios</h2>
+    <div id="listBox"><div class="loading">Cargando usuarios…</div></div>
+  </div>
+</div>
+
+<!-- Modal editar -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <button class="x" id="mClose">×</button>
+    <h3>Editar acceso</h3>
+    <div class="who2" id="mWho"></div>
+    <div class="field"><label for="mRole">Rol</label>
+      <select id="mRole"><option value="operador">Operador</option><option value="admin">Administrador</option></select></div>
+    <div class="mods show" id="mModsWrap" style="margin-top:14px">
+      <label style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Módulos habilitados</label>
+      <div class="modgrid" id="mMods"></div>
+    </div>
+    <div class="msg" id="editMsg"></div>
+    <div class="modfoot">
+      <button class="btn ghost" id="mCancel">Cancelar</button>
+      <button class="btn" id="mSave">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var cfg = window.SUPABASE_CONFIG || {};
+  var configured = window.supabase && cfg.url && cfg.url.indexOf("TU-PROYECTO") === -1;
+  var app = document.getElementById("app");
+  if (!configured) { document.body.innerHTML = '<div style="max-width:520px;margin:12vh auto;font-family:Inter;text-align:center;color:#64748B"><h2>Supabase sin configurar</h2><p>Completá <code>assets/config.js</code> y las variables de entorno en Vercel para usar el panel.</p><a href="index.html">Volver</a></div>'; return; }
+
+  var client = window.supabase.createClient(cfg.url, cfg.anonKey);
+  var TOKEN = null, MODS = window.APP_MODULES;
+
+  function modCheckboxes(container, selected) {
+    container.innerHTML = MODS.map(function (m) {
+      var ck = selected && selected.indexOf(m.key) !== -1 ? "checked" : "";
+      return '<label class="modchk"><input type="checkbox" value="'+m.key+'" '+ck+'>'+m.title+'</label>';
+    }).join("");
+  }
+  function readChecks(container) {
+    return Array.prototype.slice.call(container.querySelectorAll("input:checked")).map(function(i){return i.value;});
+  }
+  function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
+
+  function api(path, body) {
+    return fetch("/api/" + path, {
+      method: "POST", headers: { "content-type":"application/json", "Authorization":"Bearer "+TOKEN },
+      body: JSON.stringify(body || {})
+    }).then(function (r) { return r.json().then(function (j) { return { ok:r.ok, j:j }; }); });
+  }
+  function apiGet(path) {
+    return fetch("/api/" + path, { headers: { "Authorization":"Bearer "+TOKEN } })
+      .then(function (r) { return r.json().then(function (j) { return { ok:r.ok, j:j }; }); });
+  }
+
+  /* ---------- lista ---------- */
+  function renderList(users) {
+    if (!users.length) { document.getElementById("listBox").innerHTML = '<div class="loading">Sin usuarios.</div>'; return; }
+    var rows = users.map(function (u) {
+      var mtags = (u.role === "operador")
+        ? (u.allowed_modules && u.allowed_modules.length
+            ? u.allowed_modules.map(function(k){ var m=MODS.find(function(x){return x.key===k;}); return '<span class="modtag">'+esc(m?m.title:k)+'</span>'; }).join("")
+            : '<span class="modtag">— ninguno —</span>')
+        : '<span class="modtag">todos</span>';
+      var isSuper = u.role === "superadmin";
+      var acts = '<div class="actions">' +
+        '<button class="btn ghost sm" data-act="edit" data-id="'+u.id+'" '+(isSuper?'disabled':'')+'>Editar</button>' +
+        '<button class="btn ghost sm" data-act="pass" data-id="'+u.id+'" data-user="'+esc(u.username)+'">Clave</button>' +
+        '<button class="btn danger sm" data-act="del" data-id="'+u.id+'" data-user="'+esc(u.username)+'" '+(isSuper?'disabled':'')+'>Eliminar</button>' +
+        '</div>';
+      return '<tr data-id="'+u.id+'">' +
+        '<td><b>'+esc(u.username)+'</b></td>' +
+        '<td><span class="pill '+u.role+'">'+u.role+'</span></td>' +
+        '<td><div class="modtags">'+mtags+'</div></td>' +
+        '<td>'+acts+'</td></tr>';
+    }).join("");
+    document.getElementById("listBox").innerHTML =
+      '<table><thead><tr><th>Usuario</th><th>Rol</th><th>Módulos</th><th style="text-align:right">Acciones</th></tr></thead><tbody>'+rows+'</tbody></table>';
+  }
+
+  var CACHE = [];
+  function loadUsers() {
+    document.getElementById("listBox").innerHTML = '<div class="loading">Cargando usuarios…</div>';
+    apiGet("list-users").then(function (r) {
+      if (!r.ok) { document.getElementById("listBox").innerHTML = '<div class="loading" style="color:var(--red)">Error: '+esc(r.j.error||"no se pudo listar")+'</div>'; return; }
+      CACHE = r.j.users || [];
+      renderList(CACHE);
+    });
+  }
+
+  /* ---------- crear ---------- */
+  document.getElementById("nRole").addEventListener("change", function () {
+    document.getElementById("nModsWrap").classList.toggle("show", this.value === "operador");
+  });
+  document.getElementById("btnCreate").addEventListener("click", function () {
+    var btn = this, msg = document.getElementById("createMsg");
+    var username = document.getElementById("nUser").value.trim();
+    var password = document.getElementById("nPass").value;
+    var role = document.getElementById("nRole").value;
+    var modules = role === "operador" ? readChecks(document.getElementById("nMods")) : [];
+    msg.className = "msg"; msg.textContent = "";
+    if (!username || password.length < 6) { msg.className="msg err"; msg.textContent="Completá usuario y contraseña (mínimo 6 caracteres)."; return; }
+    btn.disabled = true; btn.textContent = "Creando…";
+    api("create-user", { username: username, password: password, role: role, modules: modules }).then(function (r) {
+      btn.disabled = false; btn.textContent = "Crear usuario";
+      if (!r.ok) { msg.className="msg err"; msg.textContent = r.j.error || "No se pudo crear."; return; }
+      msg.className="msg ok"; msg.textContent = "Usuario \""+username+"\" creado.";
+      document.getElementById("nUser").value=""; document.getElementById("nPass").value="";
+      modCheckboxes(document.getElementById("nMods"), []);
+      loadUsers();
+    });
+  });
+
+  /* ---------- acciones de la tabla ---------- */
+  var editing = null;
+  document.getElementById("listBox").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-act]"); if (!b || b.disabled) return;
+    var id = b.getAttribute("data-id"), act = b.getAttribute("data-act");
+    var u = CACHE.find(function(x){return x.id===id;});
+    if (act === "edit") openEdit(u);
+    else if (act === "pass") resetPass(u);
+    else if (act === "del") delUser(u);
+  });
+
+  function openEdit(u) {
+    editing = u;
+    document.getElementById("mWho").textContent = "Usuario: " + u.username;
+    document.getElementById("mRole").value = (u.role === "admin") ? "admin" : "operador";
+    modCheckboxes(document.getElementById("mMods"), u.allowed_modules || []);
+    syncModVis();
+    document.getElementById("editMsg").textContent = "";
+    document.getElementById("overlay").classList.add("show");
+  }
+  function syncModVis(){ document.getElementById("mModsWrap").classList.toggle("show", document.getElementById("mRole").value === "operador"); }
+  document.getElementById("mRole").addEventListener("change", syncModVis);
+  function closeModal(){ document.getElementById("overlay").classList.remove("show"); editing=null; }
+  document.getElementById("mClose").onclick = closeModal;
+  document.getElementById("mCancel").onclick = closeModal;
+  document.getElementById("overlay").addEventListener("click", function(e){ if(e.target===this) closeModal(); });
+
+  document.getElementById("mSave").addEventListener("click", function () {
+    if (!editing) return;
+    var btn = this, msg = document.getElementById("editMsg");
+    var role = document.getElementById("mRole").value;
+    var modules = role === "operador" ? readChecks(document.getElementById("mMods")) : [];
+    msg.className="msg"; msg.textContent="";
+    btn.disabled = true; btn.textContent = "Guardando…";
+    api("update-user", { id: editing.id, role: role, modules: modules }).then(function (r) {
+      btn.disabled = false; btn.textContent = "Guardar";
+      if (!r.ok) { msg.className="msg err"; msg.textContent = r.j.error || "No se pudo guardar."; return; }
+      closeModal(); loadUsers();
+    });
+  });
+
+  function resetPass(u) {
+    var np = window.prompt('Nueva contraseña para "'+u.username+'" (mínimo 6):');
+    if (np == null) return;
+    if (np.length < 6) { alert("La contraseña debe tener al menos 6 caracteres."); return; }
+    api("update-user", { id: u.id, password: np }).then(function (r) {
+      if (!r.ok) { alert(r.j.error || "No se pudo cambiar la contraseña."); return; }
+      alert("Contraseña actualizada.");
+    });
+  }
+  function delUser(u) {
+    if (!confirm('¿Eliminar al usuario "'+u.username+'"? Esta acción no se puede deshacer.')) return;
+    api("delete-user", { id: u.id }).then(function (r) {
+      if (!r.ok) { alert(r.j.error || "No se pudo eliminar."); return; }
+      loadUsers();
+    });
+  }
+
+  /* ---------- arranque: verificar admin ---------- */
+  modCheckboxes(document.getElementById("nMods"), []);
+  client.auth.getSession().then(function (res) {
+    var s = res && res.data ? res.data.session : null;
+    if (!s) { location.replace("index.html?next=admin.html"); return; }
+    TOKEN = s.access_token;
+    client.from("profiles").select("role").eq("id", s.user.id).single().then(function (p) {
+      var role = p && p.data ? p.data.role : null;
+      if (role !== "admin" && role !== "superadmin") { location.replace("index.html?denied=1"); return; }
+      app.style.visibility = "";
+      loadUsers();
+    }).catch(function(){ location.replace("index.html?denied=1"); });
+  });
+})();
+</script>
+</body>
+</html>

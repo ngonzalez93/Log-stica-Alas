@@ -48,16 +48,25 @@ si no hay sesión de Supabase, redirige a `index.html`. Si Supabase todavía
 4. **Login por usuario (no email).** La gente escribe solo su *nombre de usuario*;
    por detrás el sistema arma `usuario@alas.local` para Supabase. El dominio
    `alas.local` se configura en [`assets/config.js`](assets/config.js) (`usernameDomain`).
-
-   Para dar de alta a cada persona: **Authentication → Users → Add user** y poné:
-   - **Email**: `usuario@alas.local` (ej: `juan@alas.local`) — usá el mismo dominio.
-   - **Password**: la contraseña.
-   - Marcá **Auto Confirm User** (importante: el dominio es interno, no hay correo real).
-
-   Esa persona luego ingresa con usuario **`juan`** + su contraseña.
-
 5. Recomendado: en **Authentication → Providers → Email**, desactivá
    *"Enable sign-ups"* para que nadie se registre solo.
+
+### 1a. Roles y administración de usuarios
+
+1. Supabase → **SQL Editor** → corré primero [`supabase/schema.sql`](supabase/schema.sql)
+   y luego [`supabase/roles.sql`](supabase/roles.sql).
+2. `roles.sql` crea la tabla `profiles` (roles) y **siembra el superadministrador**:
+   usuario **`ngonzalez`** / contraseña **`123456`** (cambiala después desde el panel).
+3. Roles:
+   - **superadmin / admin** → ven todos los módulos + el panel `admin.html`.
+   - **operador** → ve solo los módulos que el admin le habilite.
+4. Los usuarios ya **no se crean a mano** en Supabase: entrás como admin y usás el
+   panel **Administración → Usuarios y permisos** (crear, rol, módulos, clave, borrar).
+   Eso requiere las variables de entorno en Vercel (ver paso 3).
+
+> Si el bloque de `auth.users` de `roles.sql` diera error en tu versión de Supabase,
+> creá `ngonzalez@alas.local` a mano en **Authentication → Users** (Auto Confirm) y
+> volvé a correr solo el `insert ... into public.profiles` para marcarlo superadmin.
 
 ### 1b. Base de datos (opcional, para centralizar datos)
 
@@ -92,12 +101,27 @@ git push -u origin main
 
 1. Entrá a https://vercel.com con tu cuenta de GitHub.
 2. **Add New → Project** → importá el repositorio.
-3. No hace falta configurar build (es un sitio estático). Deploy.
+3. No hace falta configurar build (Framework: *Other*). Deploy.
 4. Vas a obtener una URL tipo `informes-logistica-kpi.vercel.app`.
    Esa es la que comparte el equipo.
+5. **Variables de entorno** (necesarias para el panel de administración):
+   Vercel → tu proyecto → **Settings → Environment Variables** → agregá:
+
+   | Nombre | Valor |
+   |---|---|
+   | `SUPABASE_URL` | `https://<proyecto>.supabase.co` |
+   | `SUPABASE_ANON_KEY` | la *anon* key |
+   | `SUPABASE_SERVICE_ROLE_KEY` | la *service_role* key (**SECRETA**, solo acá) |
+   | `USERNAME_DOMAIN` | `alas.local` |
+
+   Después de agregarlas, **redeploy** (Deployments → … → Redeploy) para que las tome.
 
 > Importante: en Supabase → **Authentication → URL Configuration**, agregá tu
 > dominio de Vercel a los **Redirect URLs** / Site URL.
+
+> La `service_role` vive **solo** en Vercel (servidor), nunca en el HTML. Las
+> funciones de [`api/`](api/) la usan para crear/editar usuarios y verifican que
+> quien llama sea admin.
 
 ---
 

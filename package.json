@@ -1,0 +1,9 @@
+{
+  "name": "informes-logistica-kpi",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Informes Logística KPI — Alas. Sitio estático + funciones serverless para administración de usuarios.",
+  "engines": {
+    "node": ">=18"
+  }
+}
