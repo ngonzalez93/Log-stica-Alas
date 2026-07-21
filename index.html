@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Informes Logística · KPI — Alas</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
 <script src="assets/config.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,83 +14,99 @@
 :root{
   --bg:#EBEEE9; --surface:#FFFFFF; --ink:#16211C; --muted:#68766D;
   --teal:#0F6E56; --teal-600:#0B5744; --mint:#DCEFE7;
-  --amber:#B45309; --line:#E0E4DE; --radius:14px;
+  --amber:#B45309; --line:#E0E4DE; --radius:16px;
   --shadow:0 1px 2px rgba(22,33,28,.04),0 8px 24px rgba(22,33,28,.05);
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);
-  font-family:'Inter',system-ui,sans-serif;line-height:1.5;
+  font-family:'Inter',system-ui,sans-serif;line-height:1.5;min-height:100vh;
   background-image:radial-gradient(circle at 1px 1px,rgba(15,110,86,.05) 1px,transparent 0);
-  background-size:22px 22px;min-height:100vh}
+  background-size:22px 22px;overflow-x:hidden}
 .wrap{max-width:1080px;margin:0 auto;padding:40px 20px 64px}
 .eyebrow{font-family:'Space Grotesk';font-weight:600;font-size:12px;letter-spacing:.14em;
   text-transform:uppercase;color:var(--teal);display:flex;align-items:center;gap:8px}
 .eyebrow::before{content:"";width:22px;height:2px;background:var(--teal);display:inline-block}
 h1{font-family:'Space Grotesk';font-weight:600;font-size:30px;line-height:1.1;margin:10px 0 0;letter-spacing:-.01em}
 .sub{color:var(--muted);font-size:14px;margin-top:8px}
+.hidden{display:none!important}
 
-/* Login card */
-.login{max-width:400px;margin:8vh auto 0;background:var(--surface);border:1px solid var(--line);
-  border-radius:var(--radius);box-shadow:var(--shadow);padding:30px 28px}
-.login h1{font-size:24px;margin-top:14px}
+/* ---------------- LOGIN ---------------- */
+#loginView{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.login{position:relative;width:100%;max-width:400px;background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--radius);box-shadow:0 10px 40px rgba(22,33,28,.10);padding:34px 30px;overflow:hidden}
+.login::before{content:"";position:absolute;inset:0 0 auto 0;height:4px;
+  background:linear-gradient(90deg,var(--teal),#3E8E77,var(--mint))}
+.login .mark{width:46px;height:46px;border-radius:12px;background:var(--teal);color:#fff;
+  display:flex;align-items:center;justify-content:center;margin-bottom:16px;box-shadow:0 6px 18px rgba(15,110,86,.28)}
+.login .mark svg{width:24px;height:24px}
+.login h1{font-size:23px;margin-top:2px}
 .field{margin-top:16px}
 .field label{display:block;font-size:12px;font-weight:600;color:var(--muted);
   text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
-.field input{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:10px;
-  font-size:14px;font-family:'Inter';background:var(--bg)}
-.field input:focus{outline:2px solid var(--mint);border-color:var(--teal)}
+.field input{width:100%;padding:12px 13px;border:1px solid var(--line);border-radius:10px;
+  font-size:14px;font-family:'Inter';background:var(--bg);transition:border-color .15s,box-shadow .15s}
+.field input:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px var(--mint)}
 .btn{width:100%;margin-top:22px;background:var(--teal);color:#fff;font-family:'Space Grotesk';
-  font-weight:500;font-size:15px;padding:12px;border:none;border-radius:10px;cursor:pointer;transition:background .15s}
+  font-weight:500;font-size:15px;padding:13px;border:none;border-radius:10px;cursor:pointer;transition:background .15s}
 .btn:hover{background:var(--teal-600)}
 .btn:disabled{opacity:.6;cursor:default}
 .msg{margin-top:14px;font-size:13px;min-height:18px}
 .msg.err{color:var(--amber)}
-.msg.ok{color:var(--teal)}
 .note{margin-top:18px;font-size:12px;color:var(--muted);text-align:center}
 
-/* Menu */
+/* ---------------- MENÚ ---------------- */
 header{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-end;justify-content:space-between;
   padding-bottom:20px;border-bottom:1px solid var(--line);margin-bottom:26px}
 .who{font-size:13px;color:var(--muted)}
 .who b{color:var(--ink)}
 .logout{background:none;border:1px solid var(--line);color:var(--muted);font-family:'Inter';
-  font-size:13px;padding:7px 14px;border-radius:9px;cursor:pointer;margin-left:12px}
+  font-size:13px;padding:8px 15px;border-radius:9px;cursor:pointer;margin-left:12px;transition:.15s}
 .logout:hover{border-color:var(--teal);color:var(--teal)}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
 .tile{display:block;text-decoration:none;color:inherit;background:var(--surface);
-  border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);
-  transition:transform .12s,box-shadow .12s;position:relative;overflow:hidden}
-.tile::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--teal)}
-.tile:hover{transform:translateY(-2px);box-shadow:0 4px 8px rgba(22,33,28,.06),0 16px 40px rgba(22,33,28,.08)}
+  border:1px solid var(--line);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow);
+  position:relative;overflow:hidden;will-change:transform}
+.tile::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--teal);
+  transform:scaleY(.0);transform-origin:top;transition:transform .3s ease}
+.tile:hover::before{transform:scaleY(1)}
+.tile .ico{width:44px;height:44px;border-radius:12px;background:var(--mint);color:var(--teal);
+  display:flex;align-items:center;justify-content:center;margin-bottom:14px;transition:.25s}
+.tile .ico svg{width:22px;height:22px}
+.tile:hover .ico{background:var(--teal);color:#fff}
 .tile .tag{font-family:'Space Grotesk';font-size:11px;font-weight:600;letter-spacing:.06em;
   text-transform:uppercase;color:var(--teal)}
-.tile h2{font-family:'Space Grotesk';font-weight:600;font-size:17px;margin:8px 0 6px}
+.tile h2{font-family:'Space Grotesk';font-weight:600;font-size:17px;margin:4px 0 6px}
 .tile p{font-size:13px;color:var(--muted);margin:0}
-.hidden{display:none!important}
+.tile .arrow{position:absolute;top:22px;right:22px;color:var(--muted);opacity:0;transform:translateX(-6px);transition:.25s}
+.tile:hover .arrow{opacity:1;transform:translateX(0);color:var(--teal)}
 footer{margin-top:40px;font-size:12px;color:var(--muted);text-align:center}
 </style>
 </head>
 <body>
 
 <!-- ======================= LOGIN ======================= -->
-<div class="wrap hidden" id="loginView">
-  <div class="login">
-    <div class="eyebrow">Alas · Logística</div>
-    <h1>Informes KPI</h1>
-    <div class="sub">Acceso del equipo interno.</div>
+<div id="loginView" class="hidden">
+  <div class="login" id="loginCard">
+    <div class="mark" data-anim>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+    </div>
+    <div class="eyebrow" data-anim>Alas · Logística</div>
+    <h1 data-anim>Informes KPI</h1>
+    <div class="sub" data-anim>Acceso del equipo interno.</div>
     <form id="loginForm">
-      <div class="field">
-        <label for="email">Email</label>
-        <input type="email" id="email" autocomplete="username" required>
+      <div class="field" data-anim>
+        <label for="username">Usuario</label>
+        <input type="text" id="username" autocomplete="username" autocapitalize="none"
+               spellcheck="false" placeholder="tu usuario" required>
       </div>
-      <div class="field">
+      <div class="field" data-anim>
         <label for="password">Contraseña</label>
-        <input type="password" id="password" autocomplete="current-password" required>
+        <input type="password" id="password" autocomplete="current-password" placeholder="••••••••" required>
       </div>
-      <button class="btn" type="submit" id="loginBtn">Ingresar</button>
+      <button class="btn" type="submit" id="loginBtn" data-anim>Ingresar</button>
       <div class="msg" id="loginMsg"></div>
     </form>
-    <div class="note">¿Sin cuenta? Pedí al administrador que te dé de alta.</div>
+    <div class="note" data-anim>¿Sin acceso? Pedí al administrador que te dé de alta.</div>
   </div>
 </div>
 
@@ -97,81 +114,130 @@ footer{margin-top:40px;font-size:12px;color:var(--muted);text-align:center}
 <div class="wrap hidden" id="menuView">
   <header>
     <div>
-      <div class="eyebrow">Alas · Logística</div>
-      <h1>Informes KPI</h1>
-      <div class="sub">Elegí un informe. En cada uno cargás tu Excel para ver los datos.</div>
+      <div class="eyebrow" id="mEyebrow">Alas · Logística</div>
+      <h1 id="mTitle">Informes KPI</h1>
+      <div class="sub" id="mSub">Elegí un módulo. En cada uno cargás tu Excel para ver los datos.</div>
     </div>
-    <div>
-      <span class="who">Sesión: <b id="userEmail">—</b></span>
+    <div id="mUser">
+      <span class="who">Usuario: <b id="userName">—</b></span>
       <button class="logout" id="logoutBtn">Salir</button>
     </div>
   </header>
 
-  <div class="grid">
-    <a class="tile" href="Tablero_Tiempos_Alas.html">
-      <div class="tag">Tiempos</div>
-      <h2>Tiempos de atención</h2>
-      <p>TTA por tramos (administrativo, preparación, espera) y cumplimiento del objetivo.</p>
-    </a>
-    <a class="tile" href="Tablero_ATC_Fabrica_Alas.html">
-      <div class="tag">Tiempos · Fábrica</div>
-      <h2>Atención — Fábrica</h2>
-      <p>Panel de tiempos de atención para la operación de fábrica.</p>
-    </a>
-    <a class="tile" href="reporte_tiempos_entrega.html">
-      <div class="tag">Entregas</div>
-      <h2>Tiempos de entrega</h2>
-      <p>Reporte de tiempos de entrega de pedidos.</p>
-    </a>
-    <a class="tile" href="Informe_Pedidos_Pendientes.html">
-      <div class="tag">Pedidos</div>
-      <h2>Pedidos pendientes</h2>
-      <p>Seguimiento de pedidos pendientes.</p>
-    </a>
-    <a class="tile" href="informe_gastos_vs_presupuesto.html">
-      <div class="tag">Finanzas</div>
-      <h2>Gastos vs Presupuesto</h2>
-      <p>Comparativo de gastos reales contra presupuesto.</p>
-    </a>
-    <a class="tile" href="Georreferenciacion_Clientes_Alas.html">
-      <div class="tag">Mapa</div>
-      <h2>Georreferenciación de clientes</h2>
-      <p>Mapa de clientes con concentración y detalle por ubicación.</p>
-    </a>
-  </div>
+  <div class="grid" id="grid"></div>
 
   <footer>Panel autónomo · Los datos de cada informe se cargan desde tu Excel, no se guardan en el servidor.</footer>
 </div>
 
 <script>
+/* ---------- Módulos del menú ---------- */
+var MODULES = [
+  { href:"Tablero_Tiempos_Alas.html", tag:"Tiempos", title:"Tiempos de atención",
+    desc:"TTA por tramos (administrativo, preparación, espera) y cumplimiento del objetivo.",
+    icon:'<path d="M12 6v6l4 2"/><circle cx="12" cy="12" r="9"/>' },
+  { href:"Tablero_ATC_Fabrica_Alas.html", tag:"Tiempos · Fábrica", title:"Atención — Fábrica",
+    desc:"Panel de tiempos de atención para la operación de fábrica.",
+    icon:'<path d="M2 20h20"/><path d="M4 20V9l5 3V9l5 3V9l5 3v8"/>' },
+  { href:"reporte_tiempos_entrega.html", tag:"Entregas", title:"Tiempos de entrega",
+    desc:"Reporte de tiempos de entrega de pedidos por almacén y etapa.",
+    icon:'<rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 3v5h-7z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>' },
+  { href:"Informe_Pedidos_Pendientes.html", tag:"Pedidos", title:"Pedidos pendientes",
+    desc:"Seguimiento de pedidos pendientes de facturación.",
+    icon:'<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>' },
+  { href:"informe_gastos_vs_presupuesto.html", tag:"Finanzas", title:"Gastos vs Presupuesto",
+    desc:"Comparativo de gastos reales contra presupuesto por mes y grupo.",
+    icon:'<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>' },
+  { href:"Georreferenciacion_Clientes_Alas.html", tag:"Mapa", title:"Georreferenciación",
+    desc:"Mapa de clientes con concentración y detalle por ubicación.",
+    icon:'<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>' }
+];
+
 (function () {
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var hasGSAP = !!window.gsap && !reduce;
   var cfg = window.SUPABASE_CONFIG || {};
   var configured = window.supabase && cfg.url && cfg.url.indexOf("TU-PROYECTO") === -1;
+  var domain = cfg.usernameDomain || "alas.local";
   var loginView = document.getElementById("loginView");
   var menuView  = document.getElementById("menuView");
 
-  // Volver al informe que el usuario quería abrir antes del login.
+  /* usuario -> email interno para Supabase Auth */
+  function userToEmail(u){ return String(u).trim().toLowerCase().replace(/\s+/g,"") + "@" + domain; }
+  function emailToUser(e){ return String(e || "").split("@")[0]; }
+
   function nextTarget() {
     var p = new URLSearchParams(location.search).get("next");
     return p && /^[A-Za-z0-9_\-.]+\.html$/.test(p) ? p : null;
   }
 
-  function showMenu(email) {
-    document.getElementById("userEmail").textContent = email || "—";
-    loginView.classList.add("hidden");
-    menuView.classList.remove("hidden");
+  /* ---------- render del menú (tarjetas) ---------- */
+  function buildGrid() {
+    var html = MODULES.map(function (m) {
+      return '<a class="tile" href="' + m.href + '">' +
+        '<div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + m.icon + '</svg></div>' +
+        '<div class="tag">' + m.tag + '</div>' +
+        '<h2>' + m.title + '</h2>' +
+        '<p>' + m.desc + '</p>' +
+        '<span class="arrow"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>' +
+        '</a>';
+    }).join("");
+    document.getElementById("grid").innerHTML = html;
+  }
+
+  /* ---------- animaciones ---------- */
+  function animLoginIn() {
+    if (!hasGSAP) return;
+    gsap.from("#loginCard", { y: 26, opacity: 0, duration: .6, ease: "power3.out" });
+    gsap.from("#loginCard [data-anim]", { y: 14, opacity: 0, duration: .5, ease: "power2.out",
+      stagger: .07, delay: .12 });
+  }
+  function animMenuIn() {
+    buildGrid();
+    if (!hasGSAP) return;
+    gsap.from("#menuView header > div:first-child > *", { y: 12, opacity: 0, duration: .5,
+      ease: "power2.out", stagger: .08 });
+    gsap.from("#mUser", { opacity: 0, duration: .5, delay: .15 });
+    gsap.from(".tile", { y: 24, opacity: 0, duration: .55, ease: "power3.out",
+      stagger: .06, delay: .1, clearProps: "transform,opacity" });
+  }
+  /* transición login -> menú */
+  function toMenu(displayName, animate) {
+    document.getElementById("userName").textContent = displayName || "—";
     var next = nextTarget();
-    if (next) location.replace(next);
+    function reveal() {
+      loginView.classList.add("hidden");
+      menuView.classList.remove("hidden");
+      if (next) { location.replace(next); return; }
+      animMenuIn();
+    }
+    if (hasGSAP && animate && !loginView.classList.contains("hidden")) {
+      gsap.to("#loginCard", { y: -18, opacity: 0, scale: .97, duration: .35, ease: "power2.in",
+        onComplete: reveal });
+    } else {
+      reveal();
+    }
   }
   function showLogin() {
     menuView.classList.add("hidden");
     loginView.classList.remove("hidden");
+    animLoginIn();
   }
 
+  /* micro-interacción hover en tarjetas (GSAP) */
+  document.addEventListener("mouseover", function (e) {
+    var t = e.target.closest && e.target.closest(".tile");
+    if (t && hasGSAP) gsap.to(t, { y: -4, duration: .25, ease: "power2.out" });
+  });
+  document.addEventListener("mouseout", function (e) {
+    var t = e.target.closest && e.target.closest(".tile");
+    if (t && hasGSAP) gsap.to(t, { y: 0, duration: .3, ease: "power2.out" });
+  });
+
+  /* ---------- sin Supabase configurado: abrir menú directo ---------- */
   if (!configured) {
-    // Sin Supabase configurado: mostramos el menú directamente para no bloquear.
     console.warn("[index] Supabase sin configurar: menú abierto sin login.");
-    showMenu("(sin login)");
+    menuView.classList.remove("hidden");
+    toMenu("(sin login)", false);
     return;
   }
 
@@ -179,25 +245,29 @@ footer{margin-top:40px;font-size:12px;color:var(--muted);text-align:center}
 
   client.auth.getSession().then(function (res) {
     var s = res && res.data ? res.data.session : null;
-    if (s) showMenu(s.user.email); else showLogin();
+    if (s) toMenu(emailToUser(s.user.email), false);
+    else showLogin();
   });
 
   document.getElementById("loginForm").addEventListener("submit", function (e) {
     e.preventDefault();
     var btn = document.getElementById("loginBtn");
     var msg = document.getElementById("loginMsg");
+    var user = document.getElementById("username").value;
     msg.className = "msg"; msg.textContent = "";
     btn.disabled = true; btn.textContent = "Ingresando…";
     client.auth.signInWithPassword({
-      email: document.getElementById("email").value.trim(),
+      email: userToEmail(user),
       password: document.getElementById("password").value
     }).then(function (res) {
       btn.disabled = false; btn.textContent = "Ingresar";
       if (res.error) {
         msg.className = "msg err";
-        msg.textContent = "No pudimos ingresar: " + res.error.message;
+        msg.textContent = "Usuario o contraseña incorrectos.";
+        if (hasGSAP) gsap.fromTo("#loginCard", { x: -8 },
+          { x: 0, duration: .5, ease: "elastic.out(1,0.4)" });
       } else {
-        showMenu(res.data.user.email);
+        toMenu(emailToUser(res.data.user.email), true);
       }
     });
   });

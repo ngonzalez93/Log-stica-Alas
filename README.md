@@ -45,9 +45,19 @@ si no hay sesión de Supabase, redirige a `index.html`. Si Supabase todavía
 3. Pegá esos dos valores en [`assets/config.js`](assets/config.js).
    > La `anon key` es pública por diseño, puede ir en el código.
    > **Nunca** pongas ahí la `service_role` key.
-4. Dá de alta a cada persona del equipo en **Authentication → Users → Add user**
-   (email + contraseña). Recomendado: en **Authentication → Providers → Email**,
-   desactivá "Enable sign-ups" para que nadie se registre solo.
+4. **Login por usuario (no email).** La gente escribe solo su *nombre de usuario*;
+   por detrás el sistema arma `usuario@alas.local` para Supabase. El dominio
+   `alas.local` se configura en [`assets/config.js`](assets/config.js) (`usernameDomain`).
+
+   Para dar de alta a cada persona: **Authentication → Users → Add user** y poné:
+   - **Email**: `usuario@alas.local` (ej: `juan@alas.local`) — usá el mismo dominio.
+   - **Password**: la contraseña.
+   - Marcá **Auto Confirm User** (importante: el dominio es interno, no hay correo real).
+
+   Esa persona luego ingresa con usuario **`juan`** + su contraseña.
+
+5. Recomendado: en **Authentication → Providers → Email**, desactivá
+   *"Enable sign-ups"* para que nadie se registre solo.
 
 ### 1b. Base de datos (opcional, para centralizar datos)
 
