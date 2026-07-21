@@ -8,85 +8,85 @@
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
 <script src="assets/config.js"></script>
 <script src="assets/modules.js"></script>
+<script src="assets/alas-logo.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#F4F6FA; --surface:#FFFFFF; --ink:#0F1B2E; --muted:#64748B;
+  --bg:#F4F6FA; --surface:#FFFFFF; --ink:#0F1B2E; --muted:#64748B; --muted-2:#8A97A8;
   --blue:#1D4ED8; --blue-600:#1E40AF; --blue-soft:#DBEAFE; --line:#E2E8F0;
   --red:#DC2626; --orange:#EA580C; --green:#16A34A;
-  --radius:16px; --shadow:0 1px 2px rgba(15,27,46,.04),0 8px 24px rgba(15,27,46,.06);
+  --radius:16px; --shadow:0 1px 2px rgba(15,27,46,.04),0 10px 30px rgba(15,27,46,.06);
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);
-  font-family:'Inter',system-ui,sans-serif;line-height:1.5;min-height:100vh;
-  background-image:radial-gradient(circle at 1px 1px,rgba(29,78,216,.05) 1px,transparent 0);
-  background-size:22px 22px;overflow-x:hidden}
-.wrap{max-width:1080px;margin:0 auto;padding:40px 20px 64px}
-.eyebrow{font-family:'Space Grotesk';font-weight:600;font-size:12px;letter-spacing:.14em;
-  text-transform:uppercase;color:var(--blue);display:flex;align-items:center;gap:8px}
-.eyebrow::before{content:"";width:22px;height:2px;background:var(--blue);display:inline-block}
-h1{font-family:'Space Grotesk';font-weight:600;font-size:30px;line-height:1.1;margin:10px 0 0;letter-spacing:-.01em}
-.sub{color:var(--muted);font-size:14px;margin-top:8px}
+  font-family:'Inter',system-ui,sans-serif;font-weight:400;line-height:1.55;min-height:100vh;overflow-x:hidden}
 .hidden{display:none!important}
 
-/* ---------------- LOGIN ---------------- */
-#loginView{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+/* ------- banner superior ------- */
+.app-bar{position:sticky;top:0;z-index:900;background:linear-gradient(90deg,#1D4ED8,#1E40AF);color:#fff;box-shadow:0 2px 12px rgba(15,27,46,.18)}
+.app-bar-in{max-width:1120px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 22px}
+.app-bar .brand{display:flex;align-items:center;gap:12px}
+.app-bar .tag{font-family:'Space Grotesk';font-weight:600;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  color:rgba(255,255,255,.85);border-left:1px solid rgba(255,255,255,.35);padding-left:12px}
+.app-bar .who{font-size:12.5px;color:rgba(255,255,255,.85)}
+.app-bar .who b{color:#fff;font-weight:600}
+.logout{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.4);color:#fff;font-family:'Inter';
+  font-size:12.5px;padding:7px 13px;border-radius:9px;cursor:pointer;margin-left:12px;transition:.15s}
+.logout:hover{background:rgba(255,255,255,.22)}
+
+/* ------- login ------- */
+#loginView{min-height:calc(100vh - 56px);display:flex;align-items:center;justify-content:center;padding:24px;
+  background:radial-gradient(circle at 1px 1px,rgba(29,78,216,.05) 1px,transparent 0);background-size:22px 22px}
 .login{position:relative;width:100%;max-width:400px;background:var(--surface);border:1px solid var(--line);
-  border-radius:var(--radius);box-shadow:0 10px 40px rgba(15,27,46,.10);padding:34px 30px;overflow:hidden}
-.login::before{content:"";position:absolute;inset:0 0 auto 0;height:4px;
-  background:linear-gradient(90deg,var(--blue),#3B82F6,var(--blue-soft))}
-.login .mark{width:46px;height:46px;border-radius:12px;background:var(--blue);color:#fff;
-  display:flex;align-items:center;justify-content:center;margin-bottom:16px;box-shadow:0 6px 18px rgba(29,78,216,.30)}
-.login .mark svg{width:24px;height:24px}
-.login h1{font-size:23px;margin-top:2px}
-.field{margin-top:16px}
-.field label{display:block;font-size:12px;font-weight:600;color:var(--muted);
-  text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
-.field input{width:100%;padding:12px 13px;border:1px solid var(--line);border-radius:10px;
-  font-size:14px;font-family:'Inter';background:var(--bg);transition:border-color .15s,box-shadow .15s}
+  border-radius:var(--radius);box-shadow:0 12px 44px rgba(15,27,46,.12);padding:36px 30px;text-align:center}
+.login .logo{margin-bottom:18px;display:flex;justify-content:center}
+.login h1{font-family:'Space Grotesk';font-weight:700;font-size:24px;margin:0;letter-spacing:-.02em}
+.login .sub{color:var(--muted);font-weight:300;font-size:14px;margin-top:6px}
+.field{margin-top:16px;text-align:left}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+.field input{width:100%;padding:12px 13px;border:1px solid var(--line);border-radius:10px;font-size:14px;font-family:'Inter';
+  background:var(--bg);transition:border-color .15s,box-shadow .15s}
 .field input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft)}
-.btn{width:100%;margin-top:22px;background:var(--blue);color:#fff;font-family:'Space Grotesk';
-  font-weight:500;font-size:15px;padding:13px;border:none;border-radius:10px;cursor:pointer;transition:background .15s}
+.btn{width:100%;margin-top:22px;background:var(--blue);color:#fff;font-family:'Space Grotesk';font-weight:600;
+  font-size:15px;padding:13px;border:none;border-radius:10px;cursor:pointer;transition:background .15s}
 .btn:hover{background:var(--blue-600)}
 .btn:disabled{opacity:.6;cursor:default}
-.msg{margin-top:14px;font-size:13px;min-height:18px}
-.msg.err{color:var(--red)}
-.note{margin-top:18px;font-size:12px;color:var(--muted);text-align:center}
+.msg{margin-top:14px;font-size:13px;min-height:18px}.msg.err{color:var(--red)}
+.note{margin-top:18px;font-size:12px;color:var(--muted);font-weight:300}
 
-/* ---------------- MENÚ ---------------- */
-header{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-end;justify-content:space-between;
-  padding-bottom:20px;border-bottom:1px solid var(--line);margin-bottom:26px}
-.who{font-size:13px;color:var(--muted)}
-.who b{color:var(--ink)}
-.role-badge{display:inline-block;font-size:11px;font-weight:600;padding:2px 9px;border-radius:20px;
-  background:var(--blue-soft);color:var(--blue-600);margin-left:8px;text-transform:capitalize}
-.logout{background:none;border:1px solid var(--line);color:var(--muted);font-family:'Inter';
-  font-size:13px;padding:8px 15px;border-radius:9px;cursor:pointer;margin-left:12px;transition:.15s}
-.logout:hover{border-color:var(--blue);color:var(--blue)}
+/* ------- menú (hero + grid) ------- */
+.hero{background:linear-gradient(180deg,#fff,#F8FAFF);border-bottom:1px solid var(--line)}
+.hero-in{max-width:1120px;margin:0 auto;padding:40px 22px 34px}
+.eyebrow{font-family:'Space Grotesk';font-weight:600;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--blue)}
+.hero h1{font-family:'Space Grotesk';font-weight:700;font-size:38px;line-height:1.05;letter-spacing:-.025em;margin:10px 0 0}
+.hero p{color:var(--muted);font-weight:300;font-size:15px;margin:10px 0 0;max-width:560px}
+.wrap{max-width:1120px;margin:0 auto;padding:28px 22px 20px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
-.tile{display:block;text-decoration:none;color:inherit;background:var(--surface);
-  border:1px solid var(--line);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow);
-  position:relative;overflow:hidden;will-change:transform}
+.tile{display:block;text-decoration:none;color:inherit;background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--radius);padding:22px;box-shadow:var(--shadow);position:relative;overflow:hidden;will-change:transform}
 .tile::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--blue);
   transform:scaleY(0);transform-origin:top;transition:transform .3s ease}
 .tile:hover::before{transform:scaleY(1)}
-.tile .ico{width:44px;height:44px;border-radius:12px;background:var(--blue-soft);color:var(--blue);
+.tile .ico{width:46px;height:46px;border-radius:12px;background:var(--blue-soft);color:var(--blue);
   display:flex;align-items:center;justify-content:center;margin-bottom:14px;transition:.25s}
-.tile .ico svg{width:22px;height:22px}
+.tile .ico svg{width:23px;height:23px}
 .tile:hover .ico{background:var(--blue);color:#fff}
-.tile .tag{font-family:'Space Grotesk';font-size:11px;font-weight:600;letter-spacing:.06em;
-  text-transform:uppercase;color:var(--blue)}
-.tile h2{font-family:'Space Grotesk';font-weight:600;font-size:17px;margin:4px 0 6px}
-.tile p{font-size:13px;color:var(--muted);margin:0}
+.tile .tag{font-family:'Space Grotesk';font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--blue)}
+.tile h2{font-family:'Space Grotesk';font-weight:700;font-size:18px;margin:5px 0 6px;letter-spacing:-.01em}
+.tile p{font-size:13.5px;color:var(--muted);font-weight:300;margin:0}
 .tile .arrow{position:absolute;top:22px;right:22px;color:var(--muted);opacity:0;transform:translateX(-6px);transition:.25s}
 .tile:hover .arrow{opacity:1;transform:translateX(0);color:var(--blue)}
-.tile.admin{border-color:var(--blue-soft);background:linear-gradient(180deg,#fff, #F8FAFF)}
+.tile.admin{background:linear-gradient(180deg,#fff,#F5F9FF);border-color:var(--blue-soft)}
 .tile.admin .ico{background:var(--blue);color:#fff}
 .empty{grid-column:1/-1;background:var(--surface);border:1px dashed var(--line);border-radius:var(--radius);
-  padding:34px;text-align:center;color:var(--muted);font-size:14px}
-footer{margin-top:40px;font-size:12px;color:var(--muted);text-align:center}
+  padding:34px;text-align:center;color:var(--muted);font-weight:300;font-size:14px}
+
+/* ------- footer banner ------- */
+.app-foot{background:#0F1B2E;color:#fff;margin-top:34px}
+.app-foot-in{max-width:1120px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;
+  gap:16px;flex-wrap:wrap;padding:22px;font-size:12.5px;color:rgba(255,255,255,.72);font-weight:300}
 </style>
 </head>
 <body>
@@ -94,46 +94,51 @@ footer{margin-top:40px;font-size:12px;color:var(--muted);text-align:center}
 <!-- ======================= LOGIN ======================= -->
 <div id="loginView" class="hidden">
   <div class="login" id="loginCard">
-    <div class="mark" data-anim>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
-    </div>
-    <div class="eyebrow" data-anim>Alas · Logística</div>
-    <h1 data-anim>Informes KPI</h1>
-    <div class="sub" data-anim>Acceso del equipo interno.</div>
+    <div class="logo" id="loginLogo"></div>
+    <h1>Informes KPI</h1>
+    <div class="sub">Acceso del equipo interno.</div>
     <form id="loginForm">
-      <div class="field" data-anim>
+      <div class="field">
         <label for="username">Usuario</label>
-        <input type="text" id="username" autocomplete="username" autocapitalize="none"
-               spellcheck="false" placeholder="tu usuario" required>
+        <input type="text" id="username" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="tu usuario" required>
       </div>
-      <div class="field" data-anim>
+      <div class="field">
         <label for="password">Contraseña</label>
         <input type="password" id="password" autocomplete="current-password" placeholder="••••••••" required>
       </div>
-      <button class="btn" type="submit" id="loginBtn" data-anim>Ingresar</button>
+      <button class="btn" type="submit" id="loginBtn">Ingresar</button>
       <div class="msg" id="loginMsg"></div>
     </form>
-    <div class="note" data-anim>¿Sin acceso? Pedí al administrador que te dé de alta.</div>
+    <div class="note">¿Sin acceso? Pedí al administrador que te dé de alta.</div>
   </div>
 </div>
 
 <!-- ======================= MENÚ ======================= -->
-<div class="wrap hidden" id="menuView">
-  <header>
-    <div>
-      <div class="eyebrow">Alas · Logística</div>
-      <h1>Informes KPI</h1>
-      <div class="sub">Elegí un módulo. En cada uno cargás tu Excel para ver los datos.</div>
-    </div>
-    <div id="mUser">
-      <span class="who">Usuario: <b id="userName">—</b><span class="role-badge" id="roleBadge"></span></span>
-      <button class="logout" id="logoutBtn">Salir</button>
+<div id="menuView" class="hidden">
+  <header class="app-bar">
+    <div class="app-bar-in">
+      <div class="brand" id="barLogo"><span class="tag">Logística · KPI</span></div>
+      <div>
+        <span class="who">Usuario: <b id="userName">—</b></span>
+        <button class="logout" id="logoutBtn">Salir</button>
+      </div>
     </div>
   </header>
 
-  <div class="grid" id="grid"></div>
+  <section class="hero">
+    <div class="hero-in">
+      <div class="eyebrow">Alas · Operaciones y logística</div>
+      <h1>Informes KPI</h1>
+      <p>Elegí un módulo. Dentro de cada uno cargás tu Excel para ver los datos o importarlos a la base.</p>
+    </div>
+  </section>
 
-  <footer>Panel autónomo · Los datos de cada informe se cargan desde tu Excel, no se guardan en el servidor.</footer>
+  <div class="wrap"><div class="grid" id="grid"></div></div>
+
+  <footer class="app-foot"><div class="app-foot-in">
+    <div id="footLogo"></div>
+    <div>Panel autónomo de indicadores logísticos · © Alas</div>
+  </div></footer>
 </div>
 
 <script>
@@ -146,6 +151,13 @@ footer{margin-top:40px;font-size:12px;color:var(--muted);text-align:center}
   var loginView = document.getElementById("loginView");
   var menuView  = document.getElementById("menuView");
 
+  // logos
+  if (window.alasLogo) {
+    document.getElementById("loginLogo").innerHTML = window.alasLogo("blue", 42);
+    var bl = document.getElementById("barLogo"); bl.insertAdjacentHTML("afterbegin", window.alasLogo("white", 26));
+    document.getElementById("footLogo").innerHTML = window.alasLogo("white", 22);
+  }
+
   function userToEmail(u){ return String(u).trim().toLowerCase().replace(/\s+/g,"") + "@" + domain; }
   function emailToUser(e){ return String(e || "").split("@")[0]; }
   function nextTarget() {
@@ -155,22 +167,16 @@ footer{margin-top:40px;font-size:12px;color:var(--muted);text-align:center}
   var ICON = function(inner){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+inner+'</svg>'; };
   var ARROW = '<span class="arrow">'+ICON('<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>')+'</span>';
 
-  /* ---------- render del menú según permisos ---------- */
   function buildGrid(role, allowed) {
     var mods = window.APP_MODULES;
     var isAdmin = (role === "admin" || role === "superadmin");
     var visible = isAdmin ? mods : mods.filter(function(m){ return allowed.indexOf(m.key) !== -1; });
-
     var html = "";
     if (isAdmin) {
       html += '<a class="tile admin" href="admin.html">' +
         '<div class="ico">'+ICON('<path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>')+'</div>' +
         '<div class="tag">Administración</div><h2>Usuarios y permisos</h2>' +
         '<p>Crear usuarios, asignar roles y limitar qué módulos ve cada operador.</p>'+ARROW+'</a>';
-      html += '<a class="tile admin" href="importar.html">' +
-        '<div class="ico">'+ICON('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>')+'</div>' +
-        '<div class="tag">Datos</div><h2>Importar datos</h2>' +
-        '<p>Cargar Excel a la base de cada módulo, con control de columnas y de duplicados.</p>'+ARROW+'</a>';
     }
     if (!visible.length && !isAdmin) {
       html += '<div class="empty">Todavía no tenés módulos habilitados.<br>Pedí a un administrador que te asigne acceso.</div>';
@@ -183,107 +189,73 @@ footer{margin-top:40px;font-size:12px;color:var(--muted);text-align:center}
     document.getElementById("grid").innerHTML = html;
   }
 
-  /* ---------- animaciones ---------- */
-  function animLoginIn() {
-    if (!hasGSAP) return;
-    gsap.from("#loginCard", { y: 26, opacity: 0, duration: .6, ease: "power3.out" });
-    gsap.from("#loginCard [data-anim]", { y: 14, opacity: 0, duration: .5, ease: "power2.out", stagger: .07, delay: .12 });
-  }
   function animMenuIn() {
     if (!hasGSAP) return;
-    gsap.from("#menuView header > div:first-child > *", { y: 12, opacity: 0, duration: .5, ease: "power2.out", stagger: .08 });
-    gsap.from("#mUser", { opacity: 0, duration: .5, delay: .15 });
-    gsap.from(".tile, .empty", { y: 24, opacity: 0, duration: .55, ease: "power3.out", stagger: .06, delay: .1, clearProps: "transform,opacity" });
+    gsap.from(".hero-in > *", { y:14, opacity:0, duration:.5, ease:"power2.out", stagger:.08 });
+    gsap.from(".tile, .empty", { y:24, opacity:0, duration:.55, ease:"power3.out", stagger:.06, delay:.1, clearProps:"transform,opacity" });
   }
+  function animLoginIn(){ if(hasGSAP) gsap.from("#loginCard", { y:24, opacity:0, duration:.5, ease:"power3.out" }); }
 
-  function toMenu(profile, animate) {
+  function toMenu(profile) {
     var role = (profile && profile.role) || "operador";
     var allowed = (profile && profile.allowed_modules) || [];
     document.getElementById("userName").textContent = (profile && profile.username) || "—";
-    var badge = document.getElementById("roleBadge");
-    badge.textContent = role; badge.style.display = "inline-block";
     buildGrid(role, allowed);
-
     var next = nextTarget();
-    function reveal() {
-      loginView.classList.add("hidden");
-      menuView.classList.remove("hidden");
-      if (next) { location.replace(next); return; }
-      animMenuIn();
-    }
-    if (hasGSAP && animate && !loginView.classList.contains("hidden")) {
-      gsap.to("#loginCard", { y: -18, opacity: 0, scale: .97, duration: .35, ease: "power2.in", onComplete: reveal });
-    } else { reveal(); }
+    loginView.classList.add("hidden");
+    menuView.classList.remove("hidden");
+    if (next) { location.replace(next); return; }
+    animMenuIn();
   }
   function showLogin() {
     menuView.classList.add("hidden");
     loginView.classList.remove("hidden");
     var d = new URLSearchParams(location.search).get("denied");
-    if (d) {
-      var msg = document.getElementById("loginMsg");
-      msg.className = "msg err"; msg.textContent = "No tenés permiso para ese módulo.";
-    }
+    if (d) { var m=document.getElementById("loginMsg"); m.className="msg err"; m.textContent="No tenés permiso para ese módulo."; }
     animLoginIn();
   }
 
-  /* hover GSAP en tarjetas */
-  document.addEventListener("mouseover", function (e) {
-    var t = e.target.closest && e.target.closest(".tile");
-    if (t && hasGSAP) gsap.to(t, { y: -4, duration: .25, ease: "power2.out" });
-  });
-  document.addEventListener("mouseout", function (e) {
-    var t = e.target.closest && e.target.closest(".tile");
-    if (t && hasGSAP) gsap.to(t, { y: 0, duration: .3, ease: "power2.out" });
-  });
+  document.addEventListener("mouseover", function (e) { var t=e.target.closest&&e.target.closest(".tile"); if(t&&hasGSAP) gsap.to(t,{y:-4,duration:.25,ease:"power2.out"}); });
+  document.addEventListener("mouseout",  function (e) { var t=e.target.closest&&e.target.closest(".tile"); if(t&&hasGSAP) gsap.to(t,{y:0,duration:.3,ease:"power2.out"}); });
 
   if (!configured) {
     console.warn("[index] Supabase sin configurar: menú abierto sin login.");
-    menuView.classList.remove("hidden");
-    toMenu({ username:"(sin login)", role:"admin", allowed_modules:[] }, false);
+    toMenu({ username:"(sin login)", role:"admin", allowed_modules:[] });
     return;
   }
 
   var client = window.supabase.createClient(cfg.url, cfg.anonKey);
-
-  function loadProfileAndGo(session, animate) {
+  function loadProfileAndGo(session) {
     client.from("profiles").select("username, role, allowed_modules").eq("id", session.user.id).single()
       .then(function (p) {
-        var prof = (p && p.data) ? p.data : { username: emailToUser(session.user.email), role: "operador", allowed_modules: [] };
+        var prof = (p && p.data) ? p.data : { username: emailToUser(session.user.email), role:"operador", allowed_modules:[] };
         if (!prof.username) prof.username = emailToUser(session.user.email);
-        toMenu(prof, animate);
+        toMenu(prof);
       })
-      .catch(function () {
-        toMenu({ username: emailToUser(session.user.email), role: "operador", allowed_modules: [] }, animate);
-      });
+      .catch(function () { toMenu({ username: emailToUser(session.user.email), role:"operador", allowed_modules:[] }); });
   }
 
   client.auth.getSession().then(function (res) {
     var s = res && res.data ? res.data.session : null;
-    if (s) loadProfileAndGo(s, false); else showLogin();
+    if (s) loadProfileAndGo(s); else showLogin();
   });
 
   document.getElementById("loginForm").addEventListener("submit", function (e) {
     e.preventDefault();
-    var btn = document.getElementById("loginBtn");
-    var msg = document.getElementById("loginMsg");
-    msg.className = "msg"; msg.textContent = "";
-    btn.disabled = true; btn.textContent = "Ingresando…";
-    client.auth.signInWithPassword({
-      email: userToEmail(document.getElementById("username").value),
-      password: document.getElementById("password").value
-    }).then(function (res) {
-      btn.disabled = false; btn.textContent = "Ingresar";
-      if (res.error) {
-        msg.className = "msg err"; msg.textContent = "Usuario o contraseña incorrectos.";
-        if (hasGSAP) gsap.fromTo("#loginCard", { x: -8 }, { x: 0, duration: .5, ease: "elastic.out(1,0.4)" });
-      } else {
-        loadProfileAndGo(res.data.session, true);
-      }
-    });
+    var btn=document.getElementById("loginBtn"), msg=document.getElementById("loginMsg");
+    msg.className="msg"; msg.textContent="";
+    btn.disabled=true; btn.textContent="Ingresando…";
+    client.auth.signInWithPassword({ email:userToEmail(document.getElementById("username").value), password:document.getElementById("password").value })
+      .then(function (res) {
+        btn.disabled=false; btn.textContent="Ingresar";
+        if (res.error) {
+          msg.className="msg err"; msg.textContent="Usuario o contraseña incorrectos.";
+          if (hasGSAP) gsap.fromTo("#loginCard",{x:-8},{x:0,duration:.5,ease:"elastic.out(1,0.4)"});
+        } else { loadProfileAndGo(res.data.session); }
+      });
   });
-
   document.getElementById("logoutBtn").addEventListener("click", function () {
-    client.auth.signOut().then(function(){ location.href = "index.html"; });
+    client.auth.signOut().then(function(){ location.href="index.html"; });
   });
 })();
 </script>

@@ -85,12 +85,16 @@ Si querés guardar los datos en Supabase (en vez de subir el Excel cada vez):
 
 1. Corré también [`supabase/import.sql`](supabase/import.sql) en el SQL Editor: agrega
    a cada tabla la columna `row_hash` (huella de la fila) para **evitar duplicados**.
-2. En el menú (como admin) aparece **Importar datos** → [`importar.html`](importar.html):
-   - Elegís el módulo → ves la **guía de columnas** que debe tener el Excel.
+2. La importación está **dentro de cada dashboard**: en la barra superior azul,
+   botón **Importar datos** (disponible para cualquier usuario, no solo admin).
+   Abre un modal que:
+   - Muestra la **guía de columnas** que debe tener el Excel de ese módulo.
    - Si falta una columna **obligatoria**, no deja importar y te dice **cuál** falta.
    - Detecta y **omite duplicados** comparando la **fila completa** (dentro del
      archivo y contra lo ya cargado en la base).
    - Muestra el **progreso en %** y un **check azul** al terminar.
+   El shell (barra + footer + logo ALAS + "Volver al menú") lo agrega
+   [`assets/shell.js`](assets/shell.js); el modal, [`assets/import-widget.js`](assets/import-widget.js).
 3. La definición de columnas por módulo está en [`assets/import-spec.js`](assets/import-spec.js).
    *Pedidos pendientes* y *Atención — Fábrica* usan un **formato propuesto** (sus
    informes no tenían Excel); ajustá tu planilla a esos nombres de columna.
