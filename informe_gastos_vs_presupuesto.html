@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Puerta de acceso (login del equipo). No altera la lógica del informe. -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/config.js"></script>
+<script src="assets/auth-guard.js"></script>
+<title>Gastos vs Presupuesto</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --ink:#101B2D;
+  --ink-2:#1B2C46;
+  --paper:#F6F3EC;
+  --paper-2:#EDE8DB;
+  --line:#D9D2C0;
+  --amber:#C4732A;
+  --amber-soft:#EFD9C3;
+  --teal:#2F6E62;
+  --teal-soft:#D7E7E1;
+  --gold:#B99457;
+  --ink-text:#1B2C46;
+  --muted:#6B6455;
+  --white:#FFFFFF;
+  --radius:14px;
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink-text);
+  font-family:'Inter',sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.mono{font-family:'IBM Plex Mono',monospace;}
+.serif{font-family:'Fraunces',serif;}
+
+/* ---------- HERO ---------- */
+.hero{
+  background:radial-gradient(120% 140% at 15% 0%, #1E3255 0%, var(--ink) 55%, #0B1220 100%);
+  color:var(--paper);
+  padding:56px 6vw 40px;
+  position:relative;
+  overflow:hidden;
+}
+.hero::after{
+  content:"";
+  position:absolute; right:-10%; top:-30%;
+  width:520px;height:520px;border-radius:50%;
+  background:radial-gradient(circle, rgba(196,115,42,0.18) 0%, transparent 70%);
+}
+.hero-top{display:flex; justify-content:space-between; align-items:flex-start; gap:24px; flex-wrap:wrap; position:relative; z-index:2;}
+.eyebrow{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:12.5px;
+  letter-spacing:0.14em;
+  text-transform:uppercase;
+  color:var(--gold);
+  display:flex; align-items:center; gap:10px;
+}
+.eyebrow::before{content:"";width:22px;height:1px;background:var(--gold);display:inline-block;}
+h1.title{
+  font-family:'Fraunces',serif;
+  font-weight:600;
+  font-size:clamp(34px,5vw,54px);
+  line-height:1.05;
+  margin:14px 0 6px;
+  letter-spacing:-0.01em;
+}
+.subtitle{
+  color:#C7CEDD; font-size:16px; max-width:560px; line-height:1.5;
+  margin-bottom:36px;
+}
+
+/* ---- Uploader ---- */
+.uploader{
+  background:rgba(255,255,255,0.06);
+  border:1px solid rgba(255,255,255,0.16);
+  border-radius:var(--radius);
+  padding:16px 18px;
+  min-width:270px;
+  backdrop-filter:blur(6px);
+}
+.uploader-label{
+  font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--gold); margin-bottom:10px; display:block;
+}
+.file-row{display:flex; gap:8px; align-items:center;}
+.file-btn{
+  font-family:'IBM Plex Mono',monospace; font-size:12px; padding:9px 14px; border-radius:8px;
+  background:var(--amber); color:#241000; border:none; cursor:pointer; font-weight:600;
+  transition:filter .15s ease; white-space:nowrap;
+}
+.file-btn:hover{filter:brightness(1.08);}
+input[type=file]{display:none;}
+.file-name{
+  font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:#AEB8CC; overflow:hidden;
+  text-overflow:ellipsis; white-space:nowrap; flex:1;
+}
+.uploader-status{
+  margin-top:10px; font-family:'IBM Plex Mono',monospace; font-size:11px; color:#7FCBB6; min-height:14px;
+}
+.uploader-status.err{color:#E8896B;}
+.reset-link{
+  font-family:'IBM Plex Mono',monospace; font-size:11px; color:#96A2BC; background:none; border:none;
+  text-decoration:underline; cursor:pointer; padding:0; margin-top:8px; display:inline-block;
+}
+
+.kpi-row{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:1px;
+  background:rgba(255,255,255,0.1);
+  border:1px solid rgba(255,255,255,0.12);
+  border-radius:var(--radius);
+  overflow:hidden;
+}
+.kpi{
+  background:rgba(16,27,45,0.55);
+  padding:20px 22px;
+}
+.kpi .label{font-size:11.5px;letter-spacing:0.08em;text-transform:uppercase;color:#96A2BC;font-family:'IBM Plex Mono',monospace;}
+.kpi .value{font-family:'Fraunces',serif;font-size:26px;font-weight:600;margin-top:6px;color:#fff;}
+.kpi .delta{font-family:'IBM Plex Mono',monospace;font-size:12.5px;margin-top:4px;}
+.up{color:#E8A25C;} .down{color:#7FCBB6;} .flat{color:#B7BFD1;}
+
+/* ---------- LEDGER RIBBON ---------- */
+.ribbon-wrap{margin-top:34px; position:relative; z-index:2;}
+.ribbon-label{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#96A2BC;letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px;}
+.ribbon{display:flex; gap:6px; align-items:flex-end; height:64px;}
+.ribbon .month{flex:1; display:flex; flex-direction:column; align-items:center; gap:6px; cursor:default;}
+.ribbon .bar{width:100%; border-radius:4px 4px 2px 2px; background:var(--teal); transition:transform .15s ease; min-height:6px;}
+.ribbon .bar.over{background:var(--amber);}
+.ribbon .month:hover .bar{transform:scaleY(1.08); transform-origin:bottom;}
+.ribbon .mname{font-family:'IBM Plex Mono',monospace; font-size:11px; color:#9BA5BC;}
+.ribbon .mpct{font-family:'IBM Plex Mono',monospace; font-size:11px; color:#fff;}
+.assumption{
+  font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:#96A2BC; margin-top:18px; max-width:620px; position:relative; z-index:2;
+}
+
+/* ---------- SECTIONS ---------- */
+main{max-width:1180px; margin:0 auto; padding:0 6vw 90px;}
+section{padding:56px 0; border-bottom:1px solid var(--line);}
+section:last-child{border-bottom:none;}
+.section-head{display:flex; justify-content:space-between; align-items:flex-end; gap:20px; margin-bottom:26px; flex-wrap:wrap;}
+h2.section-title{
+  font-family:'Fraunces',serif; font-size:28px; font-weight:600; margin:0;
+  color:var(--ink);
+}
+.section-desc{color:var(--muted); font-size:14.5px; max-width:520px; margin-top:6px; line-height:1.5;}
+
+.card{
+  background:var(--white);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:22px;
+}
+.chart-card{padding:24px 24px 14px;}
+canvas{max-width:100%;}
+
+.tabs{display:flex; gap:6px; flex-wrap:wrap;}
+.tab{
+  font-family:'IBM Plex Mono',monospace; font-size:12.5px;
+  padding:7px 13px; border-radius:20px; border:1px solid var(--line);
+  background:var(--white); color:var(--muted); cursor:pointer;
+  transition:all .15s ease;
+}
+.tab:hover{border-color:var(--amber);}
+.tab.active{background:var(--ink); color:var(--paper); border-color:var(--ink);}
+
+.tornado-row{display:flex; align-items:center; gap:14px; padding:10px 0; border-bottom:1px dashed var(--line);}
+.tornado-row:last-child{border-bottom:none;}
+.tornado-label{width:190px; flex-shrink:0; font-size:13px; font-weight:600; color:var(--ink-text);}
+.tornado-track{flex:1; position:relative; height:22px; background:var(--paper-2); border-radius:4px; overflow:hidden;}
+.tornado-mid{position:absolute; left:50%; top:0; bottom:0; width:1px; background:var(--line);}
+.tornado-fill{position:absolute; top:2px; bottom:2px; border-radius:3px;}
+.tornado-fill.over{background:var(--amber);}
+.tornado-fill.under{background:var(--teal);}
+.tornado-val{width:70px; text-align:right; font-family:'IBM Plex Mono',monospace; font-size:12.5px; flex-shrink:0;}
+
+.grid-cards{display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px;}
+.flag-card{
+  border-radius:var(--radius); padding:20px; border:1px solid var(--line);
+  background:var(--white); position:relative; overflow:hidden;
+}
+.flag-card::before{content:""; position:absolute; left:0; top:0; bottom:0; width:4px;}
+.flag-card.crit::before{background:var(--amber);}
+.flag-card.good::before{background:var(--teal);}
+.flag-tag{
+  font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.08em; text-transform:uppercase;
+  padding:3px 9px; border-radius:20px; display:inline-block; margin-bottom:10px;
+}
+.flag-card.crit .flag-tag{background:var(--amber-soft); color:#8A4A18;}
+.flag-card.good .flag-tag{background:var(--teal-soft); color:#1E4B41;}
+.flag-title{font-family:'Fraunces',serif; font-size:18px; font-weight:600; margin:0 0 8px; color:var(--ink);}
+.flag-body{font-size:13.5px; color:var(--muted); line-height:1.55;}
+.flag-body b{color:var(--ink-text);}
+.flag-nums{display:flex; gap:16px; margin-top:12px; font-family:'IBM Plex Mono',monospace; font-size:12.5px; flex-wrap:wrap;}
+.flag-nums span{color:var(--muted);}
+.flag-nums b{display:block; font-size:15px; color:var(--ink-text);}
+.empty-note{color:var(--muted); font-size:13.5px; font-style:italic;}
+
+.movers-grid{display:grid; grid-template-columns:1fr 1fr; gap:24px;}
+@media(max-width:800px){.movers-grid{grid-template-columns:1fr;}}
+.movers-title{font-family:'IBM Plex Mono',monospace; font-size:12px; text-transform:uppercase; letter-spacing:.08em; margin-bottom:12px;}
+.movers-title.down{color:var(--teal);}
+.movers-title.up{color:var(--amber);}
+.mover-item{display:flex; justify-content:space-between; gap:10px; padding:10px 0; border-bottom:1px solid var(--line); font-size:13.5px;}
+.mover-item:last-child{border-bottom:none;}
+.mover-name{color:var(--ink-text); font-weight:500;}
+.mover-cat{color:var(--muted); font-size:11.5px; display:block; font-family:'IBM Plex Mono',monospace;}
+.mover-val{font-family:'IBM Plex Mono',monospace; text-align:right; flex-shrink:0; white-space:nowrap;}
+.mover-val.down{color:var(--teal);}
+.mover-val.up{color:var(--amber);}
+
+table{width:100%; border-collapse:collapse; font-size:13px;}
+th{
+  text-align:right; font-family:'IBM Plex Mono',monospace; font-size:11px; text-transform:uppercase;
+  letter-spacing:.05em; color:var(--muted); padding:10px 8px; border-bottom:2px solid var(--ink);
+}
+th:first-child{text-align:left;}
+td{padding:10px 8px; border-bottom:1px solid var(--line); text-align:right; font-family:'IBM Plex Mono',monospace;}
+td:first-child{text-align:left; font-family:'Inter',sans-serif; font-weight:500; color:var(--ink-text);}
+tr:hover td{background:var(--paper-2);}
+.pill{padding:2px 8px; border-radius:12px; font-size:11.5px; font-weight:600;}
+.pill.over{background:var(--amber-soft); color:#8A4A18;}
+.pill.under{background:var(--teal-soft); color:#1E4B41;}
+
+footer{
+  padding:30px 6vw; text-align:center; color:var(--muted); font-size:12px; font-family:'IBM Plex Mono',monospace;
+  border-top:1px solid var(--line);
+}
+#footerNote{margin-top:4px;}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-top">
+    <div>
+      <div class="eyebrow">Nelson González · Área logística</div>
+      <h1 class="title">Gastos vs Presupuesto</h1>
+      <div class="subtitle" id="subtitleText">Seguimiento mensual. Vista consolidada de ejecución presupuestaria por categoría de gasto, con foco en desvíos y mejoras mes a mes.</div>
+    </div>
+    <div class="uploader">
+      <span class="uploader-label">Actualizar con nuevo Excel</span>
+      <div class="file-row">
+        <button class="file-btn" onclick="document.getElementById('fileInput').click()">Cargar archivo .xlsx</button>
+        <span class="file-name" id="fileName">ninguno seleccionado</span>
+      </div>
+      <input type="file" id="fileInput" accept=".xlsx,.xls">
+      <div class="uploader-status" id="uploadStatus"></div>
+      <button class="reset-link" id="resetBtn" style="display:none;">↺ volver a datos originales</button>
+    </div>
+  </div>
+
+  <div class="kpi-row" id="kpiRow"></div>
+
+  <div class="ribbon-wrap">
+    <div class="ribbon-label">Desvío mensual vs presupuesto — línea de tiempo</div>
+    <div class="ribbon" id="ribbon"></div>
+  </div>
+  <div class="assumption" id="assumptionText"></div>
+</div>
+
+<main>
+
+  <section id="evolucion">
+    <div class="section-head">
+      <div>
+        <h2 class="section-title">Evolución mensual</h2>
+        <div class="section-desc">Gasto real vs presupuesto asignado. La línea punteada es el presupuesto.</div>
+      </div>
+    </div>
+    <div class="card chart-card">
+      <canvas id="chartEvolucion" height="90"></canvas>
+    </div>
+  </section>
+
+  <section id="categorias">
+    <div class="section-head">
+      <div>
+        <h2 class="section-title">Desvío por categoría</h2>
+        <div class="section-desc">Porcentaje de desvío vs presupuesto por rubro. Ámbar = sobre presupuesto, verde = bajo presupuesto. Seleccioná un mes.</div>
+      </div>
+      <div class="tabs" id="monthTabs"></div>
+    </div>
+    <div class="card">
+      <div id="tornado"></div>
+    </div>
+  </section>
+
+  <section id="criticos">
+    <div class="section-head">
+      <div>
+        <h2 class="section-title">Puntos críticos</h2>
+        <div class="section-desc">Rubros con mayor desvío promedio en el período cargado.</div>
+      </div>
+    </div>
+    <div class="grid-cards" id="criticosGrid"></div>
+  </section>
+
+  <section id="mejoras">
+    <div class="section-head">
+      <div>
+        <h2 class="section-title">Mejoras detectadas</h2>
+        <div class="section-desc" id="mejorasDesc">Comparación entre los dos últimos meses cargados: rubros y conceptos que bajaron.</div>
+      </div>
+    </div>
+    <div class="grid-cards" id="mejorasGrid" style="margin-bottom:26px;"></div>
+    <div class="card">
+      <div class="movers-grid">
+        <div>
+          <div class="movers-title down" id="moversDownTitle">▼ Mayores bajas</div>
+          <div id="moversDown"></div>
+        </div>
+        <div>
+          <div class="movers-title up" id="moversUpTitle">▲ Mayores subas</div>
+          <div id="moversUp"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="detalle">
+    <div class="section-head">
+      <div>
+        <h2 class="section-title">Detalle por categoría</h2>
+        <div class="section-desc">Gasto acumulado del período cargado vs presupuesto acumulado, por rubro.</div>
+      </div>
+    </div>
+    <div class="card">
+      <table id="tablaDetalle">
+        <thead>
+          <tr><th>Categoría</th><th>Gasto acum.</th><th>Presup. acum.</th><th>Desvío</th><th>%</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div>Informe generado a partir del archivo "análisis de gastos vs presupuesto" · Cifras en guaraníes (₲)</div>
+  <div id="footerNote"></div>
+</footer>
+
+<script>
+/* ============================================================
+   1) DATOS BASE (embebidos) — se usan hasta que se cargue un Excel nuevo
+   ============================================================ */
+const BASE_MONTH_NAMES = {1:'Enero',2:'Febrero',3:'Marzo',4:'Abril',5:'Mayo',6:'Junio',7:'Julio',8:'Agosto',9:'Septiembre',10:'Octubre',11:'Noviembre',12:'Diciembre'};
+
+const DEFAULT_DATA = {"meses": [{"mes": 1, "nombre": "Enero", "gasto": 843620309, "presupuesto": 900150000, "desvio_pct": -6.28}, {"mes": 2, "nombre": "Febrero", "gasto": 1035274995, "presupuesto": 990647139, "desvio_pct": 4.5}, {"mes": 3, "nombre": "Marzo", "gasto": 1179133497, "presupuesto": 890318549, "desvio_pct": 32.44}, {"mes": 4, "nombre": "Abril", "gasto": 966077064, "presupuesto": 844460744, "desvio_pct": 14.4}, {"mes": 5, "nombre": "Mayo", "gasto": 866348869, "presupuesto": 844700000, "desvio_pct": 2.56}], "categorias": {"ATENCION AL PERSONAL": {"gasto": [0, 0, 0, 0, 0], "presupuesto": [0, 117139, 0, 0, 0], "desvio_pct": [null, -100.0, null, null, null]}, "CARGAS SOCIALES": {"gasto": [0, 0, 13527657, 29495033, 4987875], "presupuesto": [0, 0, 5268549, 6360744, 0], "desvio_pct": [null, null, 156.8, 363.7, null]}, "GASTOS VARIOS": {"gasto": [51490934, 45095922, 51742540, 42741191, 36653274], "presupuesto": [52220000, 44170000, 41820000, 47020000, 46020000], "desvio_pct": [-1.4, 2.1, 23.7, -9.1, -20.4]}, "MANTENIMIENTO GENERAL": {"gasto": [1494782, 0, 0, 0, 9323818], "presupuesto": [2550000, 2550000, 2550000, 2550000, 2550000], "desvio_pct": [-41.4, -100.0, -100.0, -100.0, 265.6]}, "MOVILIDAD Y VIATICOS": {"gasto": [38397768, 41098355, 42735452, 40135770, 40489211], "presupuesto": [46030000, 46030000, 46030000, 46030000, 46030000], "desvio_pct": [-16.6, -10.7, -7.2, -12.8, -12.0]}, "SERVICIO DE FLETES": {"gasto": [708354554, 880220674, 980568758, 790027345, 728172873], "presupuesto": [781600000, 880030000, 776600000, 725000000, 731600000], "desvio_pct": [-9.4, 0.0, 26.3, 9.0, -0.5]}, "SERVICIOS CONTRATADOS": {"gasto": [43882272, 68501818, 90559090, 63652271, 46511818], "presupuesto": [17500000, 17500000, 17500000, 17500000, 17500000], "desvio_pct": [150.8, 291.4, 417.5, 263.7, 165.8]}, "SERVICIOS TALLER": {"gasto": [-1, 358226, 0, 25454, 210000], "presupuesto": [250000, 250000, 550000, 0, 1000000], "desvio_pct": [-100.0, 43.3, -100.0, null, -79.0]}}};
+
+const DEFAULT_DETAIL_SUB = [
+  {grupo:"SERVICIO DE FLETES", orden:"TRANSPORTADORA", vals:[682602736,828928857,931656940,743503710,691943947]},
+  {grupo:"CARGAS SOCIALES", orden:"LIQUIDACIÓN DE HABERES", vals:[0,0,13527657,29495033,4987875]},
+  {grupo:"SERVICIOS CONTRATADOS", orden:"SERVICIOS DE DESESTIBA", vals:[43882272,68501818,90559090,63652271,46511818]},
+  {grupo:"SERVICIO DE FLETES", orden:"SERVICIO DE ENCOMIENDA", vals:[23933636,50655453,46366363,45705453,35410744]},
+  {grupo:"GASTOS VARIOS", orden:"FILM", vals:[5815455,7355454,2754546,8054545,3494226]},
+  {grupo:"GASTOS VARIOS", orden:"CINTAS DE EMBALAJES", vals:[0,6021818,3010908,6250910,4197546]},
+  {grupo:"MOVILIDAD Y VIATICOS", orden:"VIATICOS ENTREGA PRODUCTOS", vals:[18811939,20901054,19797553,17816298,19294788]},
+  {grupo:"MANTENIMIENTO GENERAL", orden:"MODIFICACIÓN DE MÁQUINARIAS CON TRABAJOS", vals:[1494782,0,0,0,9323818]},
+  {grupo:"GASTOS VARIOS", orden:"BOLSAS PARA FRACCIONAMIENTO", vals:[3664364,0,1226364,0,3382363]},
+  {grupo:"MOVILIDAD Y VIATICOS", orden:"CHOFER 1", vals:[0,0,394052,545093,1345094]},
+  {grupo:"MOVILIDAD Y VIATICOS", orden:"CHOFER JUAN BALMORI", vals:[1256002,1130093,1247819,891274,1379820]},
+  {grupo:"MOVILIDAD Y VIATICOS", orden:"CHOFER FRANCISCO RIVAS", vals:[200001,964548,1959095,1145459,1521458]}
+];
+
+let evolucionChartInstance = null;
+
+/* ============================================================
+   2) UTILIDADES DE FORMATO
+   ============================================================ */
+function fmtGs(n){ return '₲' + Math.round(n).toLocaleString('es-PY'); }
+function fmtGsShort(n){ return '₲' + (n/1000000).toLocaleString('es-PY',{maximumFractionDigits:1}) + 'M'; }
+function fmtPct(n){
+  if(n===null||n===undefined||isNaN(n)) return '—';
+  const s = n>0 ? '+' : '';
+  return s + n.toLocaleString('es-PY',{maximumFractionDigits:1}) + '%';
+}
+
+/* ============================================================
+   3) PARSEO DE UN EXCEL NUEVO (SheetJS) -> misma forma que DEFAULT_DATA
+   ============================================================ */
+function parseWorkbookToDetail(workbook){
+  let rows = null;
+  for(const name of workbook.SheetNames){
+    const json = XLSX.utils.sheet_to_json(workbook.Sheets[name], {defval:null});
+    if(json.length && Object.keys(json[0]).some(k=>k.trim()==='Grupo de Gastos')){
+      rows = json; break;
+    }
+  }
+  if(!rows) throw new Error('No se encontró una hoja con la columna "Grupo de Gastos".');
+
+  const norm = rows.map(r=>{
+    const o = {};
+    Object.keys(r).forEach(k=> o[k.trim()] = r[k]);
+    return o;
+  });
+
+  const detail = norm.filter(r=>{
+    const m = r['MES'];
+    if(m===null||m===undefined) return false;
+    return /^\d+$/.test(String(m).trim());
+  }).map(r=>({
+    grupo: (r['Grupo de Gastos']||'').toString().trim(),
+    orden: (r['Orden Int']||'').toString().trim(),
+    mes: parseInt(String(r['MES']).trim(),10),
+    gasto: Number(r['Gastos - 2026'])||0,
+    presup: Number(r['Presup - 2026'])||0
+  }));
+
+  if(!detail.length) throw new Error('No se encontraron filas de detalle (columna MES numérica).');
+  return detail;
+}
+
+function buildDataFromDetail(detail){
+  const monthsSet = [...new Set(detail.map(d=>d.mes))].sort((a,b)=>a-b);
+
+  const meses = monthsSet.map(m=>{
+    const rows = detail.filter(d=>d.mes===m);
+    const gasto = rows.reduce((a,r)=>a+r.gasto,0);
+    const presupuesto = rows.reduce((a,r)=>a+r.presup,0);
+    return {mes:m, nombre: BASE_MONTH_NAMES[m]||('Mes '+m), gasto, presupuesto, desvio_pct: presupuesto? (gasto-presupuesto)/presupuesto*100 : null};
+  });
+
+  const catsSet = [...new Set(detail.map(d=>d.grupo))].filter(Boolean);
+  const categorias = {};
+  catsSet.forEach(cat=>{
+    const rowsCat = detail.filter(d=>d.grupo===cat);
+    const gasto = monthsSet.map(m=> rowsCat.filter(d=>d.mes===m).reduce((a,r)=>a+r.gasto,0));
+    const presupuesto = monthsSet.map(m=> rowsCat.filter(d=>d.mes===m).reduce((a,r)=>a+r.presup,0));
+    const desvio_pct = gasto.map((g,i)=> presupuesto[i]? (g-presupuesto[i])/presupuesto[i]*100 : null);
+    categorias[cat] = {gasto, presupuesto, desvio_pct};
+  });
+
+  return {meses, categorias, monthsSet};
+}
+
+function buildMoversFromDetail(detail, monthsSet){
+  if(monthsSet.length<2) return {bajas:[], subas:[], prevName:null, lastName:null};
+  const prev = monthsSet[monthsSet.length-2];
+  const last = monthsSet[monthsSet.length-1];
+  const key = d=> d.grupo+'|||'+d.orden;
+  const keys = [...new Set(detail.map(key))];
+  const rows = keys.map(k=>{
+    const [grupo, orden] = k.split('|||');
+    const mPrev = detail.filter(d=>key(d)===k && d.mes===prev).reduce((a,r)=>a+r.gasto,0);
+    const mLast = detail.filter(d=>key(d)===k && d.mes===last).reduce((a,r)=>a+r.gasto,0);
+    return {grupo, orden, mPrev, mLast, chg: mLast-mPrev, pct: mPrev? (mLast-mPrev)/mPrev*100 : null};
+  }).filter(r=> r.mPrev!==0 || r.mLast!==0);
+  rows.sort((a,b)=>a.chg-b.chg);
+  return {
+    bajas: rows.slice(0,6),
+    subas: rows.slice(-6).reverse(),
+    prevName: BASE_MONTH_NAMES[prev]||('Mes '+prev),
+    lastName: BASE_MONTH_NAMES[last]||('Mes '+last)
+  };
+}
+
+/* ============================================================
+   4) GENERADOR DE INSIGHTS (críticos / mejoras) A PARTIR DE LOS DATOS
+   ============================================================ */
+function generateCriticos(data){
+  const cats = Object.keys(data.categorias);
+  const scored = cats.map(cat=>{
+    const c = data.categorias[cat];
+    const vals = c.desvio_pct.filter(v=>v!==null);
+    if(!vals.length) return null;
+    const avg = vals.reduce((a,b)=>a+b,0)/vals.length;
+    const worstIdx = c.desvio_pct.reduce((best,v,i)=> (v!==null && (best===-1 || v>c.desvio_pct[best])) ? i : best, -1);
+    const monthsOver = vals.filter(v=>v>0).length;
+    const structural = monthsOver===vals.length && vals.length>=3;
+    return {cat, avg, worstIdx, worstVal:c.desvio_pct[worstIdx], monthsOver, totalMonths:vals.length, structural, lastVal: vals[vals.length-1]};
+  }).filter(x=>x && x.avg>10).sort((a,b)=>b.avg-a.avg).slice(0,4);
+  return scored.map(s=>({
+    tag: s.structural ? `Estructural · ${s.totalMonths} meses` : 'Repunte a revisar',
+    title: s.cat,
+    body: `Desvío promedio del período: <b>${fmtPct(s.avg)}</b>. Estuvo sobre presupuesto en ${s.monthsOver} de ${s.totalMonths} meses con presupuesto asignado. Pico en <b>${data.meses[s.worstIdx].nombre}</b>: ${fmtPct(s.worstVal)}.`,
+    nums:[['Desvío promedio', fmtPct(s.avg)], ['Pico ('+data.meses[s.worstIdx].nombre+')', fmtPct(s.worstVal)]]
+  }));
+}
+
+function generateMejoras(data, movers){
+  const cards = [];
+  const n = data.meses.length;
+  if(n>=2){
+    const last = data.meses[n-1], prev = data.meses[n-2];
+    if(last.desvio_pct!==null && prev.desvio_pct!==null){
+      const mejora = prev.desvio_pct - last.desvio_pct;
+      cards.push({
+        tag: mejora>0 ? 'Mejora general' : 'Atención',
+        title: mejora>0 ? `${last.nombre} mejora el control presupuestario` : `${last.nombre} empeora vs ${prev.nombre}`,
+        body: `El desvío total ${mejora>0?'bajó':'subió'} de <b>${fmtPct(prev.desvio_pct)}</b> (${prev.nombre}) a <b>${fmtPct(last.desvio_pct)}</b> (${last.nombre}).`,
+        nums:[[prev.nombre, fmtPct(prev.desvio_pct)],[last.nombre, fmtPct(last.desvio_pct)]]
+      });
+    }
+  }
+  // categorías con mayor mejora de puntos porcentuales entre los dos últimos meses
+  const cats = Object.keys(data.categorias);
+  const catImprovs = cats.map(cat=>{
+    const c = data.categorias[cat];
+    const a = c.desvio_pct[n-2], b = c.desvio_pct[n-1];
+    if(a===null||b===null||a===undefined||b===undefined) return null;
+    return {cat, diff: a-b, a, b};
+  }).filter(x=>x && x.diff>5).sort((a,b)=>b.diff-a.diff).slice(0,2);
+  catImprovs.forEach(ci=>{
+    cards.push({
+      tag:'Mejora por categoría',
+      title: ci.cat,
+      body: `El desvío bajó ${ci.diff.toFixed(1)} puntos porcentuales: de <b>${fmtPct(ci.a)}</b> a <b>${fmtPct(ci.b)}</b> respecto al mes anterior.`,
+      nums:[['Antes', fmtPct(ci.a)],['Ahora', fmtPct(ci.b)]]
+    });
+  });
+  // categorías bajo presupuesto TODOS los meses con datos
+  const consistent = cats.map(cat=>{
+    const c = data.categorias[cat];
+    const vals = c.desvio_pct.filter(v=>v!==null);
+    if(vals.length<3) return null;
+    if(vals.every(v=>v<0)) return {cat, avg: vals.reduce((a,b)=>a+b,0)/vals.length, n:vals.length};
+    return null;
+  }).filter(Boolean);
+  consistent.slice(0,1).forEach(c=>{
+    cards.push({
+      tag:'Control constante',
+      title:c.cat,
+      body:`Se mantuvo <b>bajo presupuesto en los ${c.n} meses</b> con datos, sin excepción. No es una mejora puntual: es control sostenido.`,
+      nums:[['Desvío promedio', fmtPct(c.avg)]]
+    });
+  });
+  return cards;
+}
+
+/* ============================================================
+   5) RENDER
+   ============================================================ */
+function clear(el){ el.innerHTML=''; }
+
+function render(data, movers){
+  const catOrder = Object.keys(data.categorias).sort((a,b)=>{
+    const maxA = Math.max(...data.categorias[a].gasto.map(v=>Math.abs(v)));
+    const maxB = Math.max(...data.categorias[b].gasto.map(v=>Math.abs(v)));
+    return maxB-maxA;
+  });
+
+  /* --- subtitle / assumption --- */
+  const first = data.meses[0].nombre, last = data.meses[data.meses.length-1].nombre;
+  document.getElementById('subtitleText').textContent = `Seguimiento mensual ${first.toLowerCase()}–${last.toLowerCase()} 2026. Vista consolidada de ejecución presupuestaria por categoría de gasto, con foco en desvíos y mejoras mes a mes.`;
+  const lastM = data.meses[data.meses.length-1], prevM = data.meses[data.meses.length-2];
+  document.getElementById('assumptionText').textContent = prevM
+    ? `* ${lastM.nombre} cierra con un desvío de ${fmtPct(lastM.desvio_pct)}, frente a ${fmtPct(prevM.desvio_pct)} en ${prevM.nombre}.`
+    : `* Mostrando datos de ${lastM.nombre}.`;
+  document.getElementById('footerNote').textContent = `Período cargado: ${first} – ${last} · ${data.meses.length} mes(es)`;
+
+  /* --- KPI --- */
+  const kpiRow = document.getElementById('kpiRow'); clear(kpiRow);
+  const totGasto = data.meses.reduce((a,m)=>a+m.gasto,0);
+  const totPresup = data.meses.reduce((a,m)=>a+m.presupuesto,0);
+  const desvioAcum = totPresup ? (totGasto-totPresup)/totPresup*100 : null;
+  const mejora = prevM && lastM.desvio_pct!==null && prevM.desvio_pct!==null ? (prevM.desvio_pct - lastM.desvio_pct) : null;
+  const kpis = [
+    {label:`Gasto acumulado (${data.meses.length} meses)`, value: fmtGsShort(totGasto)},
+    {label:'Presupuesto acumulado', value: fmtGsShort(totPresup)},
+    {label:'Desvío acumulado', value: fmtPct(desvioAcum)},
+    {label:`Desvío de ${lastM.nombre}`, value: fmtPct(lastM.desvio_pct), sub: prevM? `vs ${fmtPct(prevM.desvio_pct)} en ${prevM.nombre}`:null, dir: mejora!==null ? (mejora>0?'down':'up') : null, mejora}
+  ];
+  kpis.forEach(k=>{
+    const el = document.createElement('div'); el.className='kpi';
+    el.innerHTML = `<div class="label">${k.label}</div><div class="value">${k.value}</div>${k.sub?`<div class="delta ${k.dir==='up'?'down':'up'}">${k.mejora>0?'▲ mejora':'▼ empeora'} ${Math.abs(k.mejora).toFixed(1)} pp ${k.sub}</div>`:''}`;
+    kpiRow.appendChild(el);
+  });
+
+  /* --- Ribbon --- */
+  const ribbon = document.getElementById('ribbon'); clear(ribbon);
+  const maxAbs = Math.max(...data.meses.map(m=>Math.abs(m.desvio_pct||0)), 1);
+  data.meses.forEach(m=>{
+    const h = m.desvio_pct===null ? 8 : Math.max(8, Math.round(Math.abs(m.desvio_pct)/maxAbs*54));
+    const el = document.createElement('div'); el.className='month';
+    el.innerHTML = `<div class="mpct">${fmtPct(m.desvio_pct)}</div><div class="bar ${m.desvio_pct>0?'over':''}" style="height:${h}px"></div><div class="mname">${m.nombre.slice(0,3)}</div>`;
+    ribbon.appendChild(el);
+  });
+
+  /* --- Evolution chart --- */
+  if(evolucionChartInstance) evolucionChartInstance.destroy();
+  const ctx = document.getElementById('chartEvolucion');
+  evolucionChartInstance = new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels: data.meses.map(m=>m.nombre),
+      datasets:[
+        { label:'Gasto real', data:data.meses.map(m=>m.gasto), backgroundColor:data.meses.map(m=> m.desvio_pct>0 ? '#C4732A' : '#2F6E62'), borderRadius:5, barPercentage:0.55, order:2 },
+        { label:'Presupuesto', data:data.meses.map(m=>m.presupuesto), type:'line', borderColor:'#1B2C46', backgroundColor:'#1B2C46', borderWidth:2, borderDash:[5,4], pointRadius:4, pointBackgroundColor:'#1B2C46', tension:0, order:1 }
+      ]
+    },
+    options:{
+      responsive:true,
+      interaction:{mode:'index', intersect:false},
+      plugins:{
+        legend:{position:'top', align:'end', labels:{font:{family:'Inter', size:12}, boxWidth:12, usePointStyle:true}},
+        tooltip:{ backgroundColor:'#101B2D', titleFont:{family:'Fraunces', size:13}, bodyFont:{family:'IBM Plex Mono', size:12}, padding:12,
+          callbacks:{ label:(c)=> ` ${c.dataset.label}: ${fmtGs(c.raw)}` } }
+      },
+      scales:{
+        y:{ ticks:{ callback:(v)=>fmtGsShort(v), font:{family:'IBM Plex Mono', size:11} }, grid:{color:'#EAE4D6'} },
+        x:{ grid:{display:false}, ticks:{font:{family:'Inter', size:12.5}} }
+      }
+    }
+  });
+
+  /* --- Tabs + tornado --- */
+  const tabsEl = document.getElementById('monthTabs'); clear(tabsEl);
+  function renderTornado(idx){
+    const wrap = document.getElementById('tornado'); clear(wrap);
+    const maxAbsT = Math.max(...catOrder.map(c=>{ const v=data.categorias[c].desvio_pct[idx]; return v===null?0:Math.min(Math.abs(v),150); }), 20);
+    catOrder.forEach(cat=>{
+      const v = data.categorias[cat].desvio_pct[idx];
+      const gasto = data.categorias[cat].gasto[idx];
+      if(v===null && gasto===0) return;
+      const row = document.createElement('div'); row.className='tornado-row';
+      let fillHtml='';
+      if(v!==null){
+        const capped = Math.max(-150, Math.min(150, v));
+        const pctWidth = Math.min(50, Math.abs(capped)/maxAbsT*50);
+        const side = capped>=0 ? `left:50%;` : `right:50%;`;
+        fillHtml = `<div class="tornado-fill ${capped>=0?'over':'under'}" style="${side} width:${pctWidth}%;"></div>`;
+      }
+      row.innerHTML = `<div class="tornado-label">${cat}</div><div class="tornado-track"><div class="tornado-mid"></div>${fillHtml}</div><div class="tornado-val">${fmtPct(v)}</div>`;
+      wrap.appendChild(row);
+    });
+  }
+  data.meses.forEach((m,i)=>{
+    const t = document.createElement('div'); t.className='tab'+(i===data.meses.length-1?' active':'');
+    t.textContent = m.nombre;
+    t.onclick = ()=>{ document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active')); t.classList.add('active'); renderTornado(i); };
+    tabsEl.appendChild(t);
+  });
+  renderTornado(data.meses.length-1);
+
+  /* --- Critical cards --- */
+  const critGrid = document.getElementById('criticosGrid'); clear(critGrid);
+  const critCards = generateCriticos(data);
+  if(!critCards.length){ critGrid.innerHTML = `<div class="empty-note">No se detectaron desvíos promedio mayores a 10% en el período cargado.</div>`; }
+  critCards.forEach(c=>{
+    const el = document.createElement('div'); el.className='flag-card crit';
+    el.innerHTML = `<span class="flag-tag">${c.tag}</span><h3 class="flag-title">${c.title}</h3><div class="flag-body">${c.body}</div><div class="flag-nums">${c.nums.map(n=>`<span>${n[0]}<b>${n[1]}</b></span>`).join('')}</div>`;
+    critGrid.appendChild(el);
+  });
+
+  /* --- Improvement cards --- */
+  const mejGrid = document.getElementById('mejorasGrid'); clear(mejGrid);
+  const mejCards = generateMejoras(data, movers);
+  if(!mejCards.length){ mejGrid.innerHTML = `<div class="empty-note">Se necesitan al menos dos meses cargados para comparar mejoras.</div>`; }
+  mejCards.forEach(c=>{
+    const el = document.createElement('div'); el.className='flag-card good';
+    el.innerHTML = `<span class="flag-tag">${c.tag}</span><h3 class="flag-title">${c.title}</h3><div class="flag-body">${c.body}</div><div class="flag-nums">${c.nums.map(n=>`<span>${n[0]}<b>${n[1]}</b></span>`).join('')}</div>`;
+    mejGrid.appendChild(el);
+  });
+
+  /* --- Movers --- */
+  document.getElementById('mejorasDesc').textContent = movers.prevName
+    ? `Comparación ${movers.prevName} → ${movers.lastName}: rubros y conceptos específicos que bajaron o subieron respecto al mes anterior.`
+    : 'Cargá al menos dos meses para ver esta comparación.';
+  document.getElementById('moversDownTitle').textContent = `▼ Mayores bajas (${movers.prevName||'-'} → ${movers.lastName||'-'})`;
+  document.getElementById('moversUpTitle').textContent = `▲ Mayores subas (${movers.prevName||'-'} → ${movers.lastName||'-'})`;
+  const downEl = document.getElementById('moversDown'); clear(downEl);
+  const upEl = document.getElementById('moversUp'); clear(upEl);
+  movers.bajas.forEach(m=>{
+    const el = document.createElement('div'); el.className='mover-item';
+    el.innerHTML = `<div><span class="mover-name">${m.orden}</span><span class="mover-cat">${m.grupo}</span></div><div class="mover-val down">${fmtGs(m.chg)}<br>${m.pct!==null?fmtPct(m.pct):''}</div>`;
+    downEl.appendChild(el);
+  });
+  movers.subas.forEach(m=>{
+    const el = document.createElement('div'); el.className='mover-item';
+    el.innerHTML = `<div><span class="mover-name">${m.orden}</span><span class="mover-cat">${m.grupo}</span></div><div class="mover-val up">+${fmtGs(m.chg)}<br>${m.pct!==null?fmtPct(m.pct):'nuevo'}</div>`;
+    upEl.appendChild(el);
+  });
+  if(!movers.bajas.length) downEl.innerHTML = '<div class="empty-note">Sin datos suficientes.</div>';
+  if(!movers.subas.length) upEl.innerHTML = '<div class="empty-note">Sin datos suficientes.</div>';
+
+  /* --- Table --- */
+  const tbody = document.querySelector('#tablaDetalle tbody'); clear(tbody);
+  catOrder.forEach(cat=>{
+    const g = data.categorias[cat].gasto.reduce((a,b)=>a+b,0);
+    const p = data.categorias[cat].presupuesto.reduce((a,b)=>a+b,0);
+    const dev = g-p;
+    const pct = p ? (dev/p*100) : null;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${cat}</td><td>${fmtGs(g)}</td><td>${fmtGs(p)}</td><td>${fmtGs(dev)}</td><td><span class="pill ${dev>0?'over':'under'}">${fmtPct(pct)}</span></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+/* ============================================================
+   6) CARGA INICIAL (datos embebidos)
+   ============================================================ */
+const defaultMovers = {
+  bajas: DEFAULT_DETAIL_SUB.map(s=>({grupo:s.grupo, orden:s.orden, mPrev:s.vals[3], mLast:s.vals[4], chg:s.vals[4]-s.vals[3], pct: s.vals[3]? (s.vals[4]-s.vals[3])/s.vals[3]*100 : null}))
+    .filter(r=>r.chg<0).sort((a,b)=>a.chg-b.chg).slice(0,6),
+  subas: DEFAULT_DETAIL_SUB.map(s=>({grupo:s.grupo, orden:s.orden, mPrev:s.vals[3], mLast:s.vals[4], chg:s.vals[4]-s.vals[3], pct: s.vals[3]? (s.vals[4]-s.vals[3])/s.vals[3]*100 : null}))
+    .filter(r=>r.chg>0).sort((a,b)=>b.chg-a.chg).slice(0,6),
+  prevName:'Abril', lastName:'Mayo'
+};
+render(DEFAULT_DATA, defaultMovers);
+
+/* ============================================================
+   7) MANEJO DEL INPUT DE ARCHIVO (auto-actualización)
+   ============================================================ */
+const fileInput = document.getElementById('fileInput');
+const fileNameEl = document.getElementById('fileName');
+const statusEl = document.getElementById('uploadStatus');
+const resetBtn = document.getElementById('resetBtn');
+
+fileInput.addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  fileNameEl.textContent = file.name;
+  statusEl.classList.remove('err');
+  statusEl.textContent = 'Procesando…';
+  const reader = new FileReader();
+  reader.onload = (ev)=>{
+    try{
+      const wb = XLSX.read(new Uint8Array(ev.target.result), {type:'array'});
+      const detail = parseWorkbookToDetail(wb);
+      const data = buildDataFromDetail(detail);
+      const movers = buildMoversFromDetail(detail, data.monthsSet);
+      render(data, movers);
+      statusEl.textContent = `✓ Actualizado — ${data.meses.length} mes(es) cargados (${data.meses[0].nombre} a ${data.meses[data.meses.length-1].nombre})`;
+      resetBtn.style.display = 'inline-block';
+    }catch(err){
+      statusEl.classList.add('err');
+      statusEl.textContent = '⚠ ' + err.message;
+    }
+  };
+  reader.onerror = ()=>{ statusEl.classList.add('err'); statusEl.textContent = '⚠ No se pudo leer el archivo.'; };
+  reader.readAsArrayBuffer(file);
+});
+
+resetBtn.addEventListener('click', ()=>{
+  render(DEFAULT_DATA, defaultMovers);
+  fileNameEl.textContent = 'ninguno seleccionado';
+  statusEl.textContent = '';
+  statusEl.classList.remove('err');
+  resetBtn.style.display = 'none';
+  fileInput.value = '';
+});
+</script>
+</body>
+</html>

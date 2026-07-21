@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Puerta de acceso (login del equipo). No altera la lógica del informe. -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/config.js"></script>
+<script src="assets/auth-guard.js"></script>
+<title>Panel de tiempos de atención — Alas</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EBEEE9; --surface:#FFFFFF; --ink:#16211C; --muted:#68766D;
+  --teal:#0F6E56; --teal-600:#0B5744; --mint:#DCEFE7;
+  --amber:#B45309; --amber-bg:#F6E7CF; --gray-seg:#B9BEB6;
+  --line:#E0E4DE; --radius:14px;
+  --shadow:0 1px 2px rgba(22,33,28,.04),0 8px 24px rgba(22,33,28,.05);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:'Inter',system-ui,sans-serif;line-height:1.5;
+  background-image:radial-gradient(circle at 1px 1px,rgba(15,110,86,.05) 1px,transparent 0);
+  background-size:22px 22px;}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 20px 64px}
+
+/* Header */
+header{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-end;justify-content:space-between;
+  padding-bottom:20px;border-bottom:1px solid var(--line);margin-bottom:26px}
+.eyebrow{font-family:'Space Grotesk';font-weight:600;font-size:12px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--teal);display:flex;align-items:center;gap:8px}
+.eyebrow::before{content:"";width:22px;height:2px;background:var(--teal);display:inline-block}
+h1{font-family:'Space Grotesk';font-weight:600;font-size:29px;line-height:1.1;margin:8px 0 0;letter-spacing:-.01em}
+.sub{color:var(--muted);font-size:14px;margin-top:6px}
+.uploader{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.filebtn{display:inline-flex;align-items:center;gap:9px;background:var(--teal);color:#fff;
+  font-family:'Space Grotesk';font-weight:500;font-size:14px;padding:11px 18px;border-radius:10px;
+  cursor:pointer;border:none;transition:background .15s}
+.filebtn:hover{background:var(--teal-600)}
+.filebtn:focus-visible{outline:3px solid var(--mint);outline-offset:2px}
+.filebtn svg{width:16px;height:16px}
+input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.srcbadge{font-size:12px;color:var(--muted);font-family:'Space Grotesk')}
+.srcbadge b{color:var(--ink);font-weight:600}
+
+/* KPI strip */
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:26px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  padding:16px 16px 14px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--teal)}
+.kpi.warn::before{background:var(--amber)}
+.kpi .label{font-size:11.5px;color:var(--muted);font-weight:500;letter-spacing:.02em;
+  text-transform:uppercase;min-height:28px}
+.kpi .num{font-family:'Space Grotesk';font-weight:600;font-size:30px;font-feature-settings:'tnum';
+  line-height:1;margin-top:8px;letter-spacing:-.02em}
+.kpi .unit{font-size:13px;color:var(--muted);font-weight:500;margin-left:3px}
+
+/* Grid */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  padding:20px;box-shadow:var(--shadow)}
+.card.full{grid-column:1 / -1}
+.card h2{font-family:'Space Grotesk';font-weight:600;font-size:16px;margin:0 0 3px}
+.card .hint{font-size:12.5px;color:var(--muted);margin:0 0 16px}
+.chartbox{position:relative;height:230px}
+.chartbox.tall{height:150px}
+
+/* Quality mini stats */
+.qgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:4px}
+.qstat{background:var(--bg);border-radius:10px;padding:14px 16px}
+.qstat .n{font-family:'Space Grotesk';font-weight:600;font-size:24px;font-feature-settings:'tnum'}
+.qstat .l{font-size:12px;color:var(--muted);margin-top:2px}
+.qstat.bad .n{color:var(--amber)}
+
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;font-size:12.5px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.dot{width:11px;height:11px;border-radius:3px;display:inline-block}
+
+footer{margin-top:30px;font-size:12px;color:var(--muted);text-align:center}
+
+@media(max-width:900px){
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .grid{grid-template-columns:1fr}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow">Alas · Operaciones y logística</div>
+      <h1>Panel de tiempos de atención</h1>
+      <div class="sub">Del arribo del cliente al cierre en el sistema, tramo por tramo.</div>
+    </div>
+    <div class="uploader">
+      <label class="filebtn" for="file" tabindex="0">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Cargar mi Excel
+      </label>
+      <input type="file" id="file" accept=".xlsx,.xls">
+      <div class="srcbadge" id="src">Mostrando <b>datos de ejemplo</b></div>
+    </div>
+  </header>
+
+  <section class="kpis" id="kpis"></section>
+
+  <div class="grid">
+    <div class="card full">
+      <h2>Composición del tiempo por flujo</h2>
+      <p class="hint">Cada barra es el TTA promedio, dividido en los tres tramos. Así ves qué parte controla tu equipo (T2) y qué parte no.</p>
+      <div class="chartbox tall"><canvas id="stackChart"></canvas></div>
+      <div class="legend">
+        <span><i class="dot" style="background:#D9A441"></i>T1 · Administrativo (autorización y facturación)</span>
+        <span><i class="dot" style="background:#0F6E56"></i>T2 · Preparación (empaque)</span>
+        <span><i class="dot" style="background:#B9BEB6"></i>T3 · Espera del cliente</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>TTA promedio por tipo de flujo</h2>
+      <p class="hint">Tiempo total de atención, en minutos.</p>
+      <div class="chartbox"><canvas id="ttaChart"></canvas></div>
+    </div>
+
+    <div class="card">
+      <h2>Cumplimiento del objetivo</h2>
+      <p class="hint">Porcentaje de pedidos entregados dentro de la meta de cada flujo.</p>
+      <div class="chartbox"><canvas id="slaChart"></canvas></div>
+    </div>
+
+    <div class="card">
+      <h2>Tendencia diaria del TTA</h2>
+      <p class="hint">Promedio por día. Vigilá los picos.</p>
+      <div class="chartbox"><canvas id="trendChart"></canvas></div>
+    </div>
+
+    <div class="card">
+      <h2>Calidad</h2>
+      <p class="hint">Errores de control y reclamos sobre el total de pedidos.</p>
+      <div class="qgrid" id="quality"></div>
+    </div>
+  </div>
+
+  <footer>Panel autónomo · Cargá la plantilla de tiempos para recalcular todo. Los cálculos toman las columnas ya computadas del Excel.</footer>
+</div>
+
+<script>
+const C = { teal:'#0F6E56', amber:'#D9A441', gray:'#B9BEB6', ink:'#16211C', muted:'#68766D',
+            mint:'#DCEFE7', red:'#B45309', line:'#E0E4DE' };
+const FLOWS = ['Compra','Retiro','Ferretería WMS'];
+
+// Datos de ejemplo (coinciden con la plantilla Excel)
+const SAMPLE = [
+ {flujo:'Compra',        fecha:'2026-07-07', t1:9,  t2:12, t3:5, tta:26, error:'No', reclamo:'No', dentro:'Sí', antic:'No'},
+ {flujo:'Retiro',        fecha:'2026-07-07', t1:2,  t2:11, t3:5, tta:18, error:'No', reclamo:'No', dentro:'Sí', antic:'No'},
+ {flujo:'Ferretería WMS',fecha:'2026-07-07', t1:null,t2:null,t3:5, tta:5,  error:'No', reclamo:'No', dentro:'Sí', antic:'Sí'},
+ {flujo:'Compra',        fecha:'2026-07-07', t1:15, t2:23, t3:7, tta:45, error:'Sí', reclamo:'Sí', dentro:'No', antic:'No'},
+ {flujo:'Retiro',        fecha:'2026-07-08', t1:1,  t2:8,  t3:3, tta:12, error:'No', reclamo:'No', dentro:'Sí', antic:'No'},
+ {flujo:'Ferretería WMS',fecha:'2026-07-08', t1:null,t2:null,t3:3, tta:3,  error:'No', reclamo:'No', dentro:'Sí', antic:'Sí'},
+];
+
+let charts = {};
+const num = v => (v===null||v===undefined||v==='')?null:(typeof v==='number'?v:parseFloat(String(v).replace(',','.')));
+const mean = a => a.length? a.reduce((s,x)=>s+x,0)/a.length : null;
+function percentile(arr,p){
+  const a=arr.filter(x=>x!=null).sort((x,y)=>x-y); if(!a.length)return null;
+  const idx=(a.length-1)*p, lo=Math.floor(idx), hi=Math.ceil(idx);
+  if(lo===hi)return a[lo]; return a[lo]+(a[hi]-a[lo])*(idx-lo);
+}
+const fmt = (v,d=1)=> v==null?'—':(Math.round(v*Math.pow(10,d))/Math.pow(10,d)).toLocaleString('es-PY');
+const pct = v=> v==null?'—':Math.round(v*100)+'%';
+
+function compute(rows){
+  const R = rows.filter(r=>r.flujo && FLOWS.includes(r.flujo));
+  const tta = R.map(r=>num(r.tta)).filter(x=>x!=null);
+  const dentroSi = R.filter(r=>r.dentro==='Sí').length;
+  const dentroNo = R.filter(r=>r.dentro==='No').length;
+  const wms = R.filter(r=>r.flujo==='Ferretería WMS');
+  const wmsAnt = wms.filter(r=>r.antic==='Sí').length;
+  const t2All = R.map(r=>num(r.t2)).filter(x=>x!=null);
+  const byFlow = f=>R.filter(r=>r.flujo===f);
+  return {
+    n:R.length,
+    ttaAvg:mean(tta), ttaP50:percentile(tta,.5), ttaP90:percentile(tta,.9),
+    t2Avg:mean(t2All),
+    cumpl:(dentroSi+dentroNo)? dentroSi/(dentroSi+dentroNo):null,
+    wmsAnt: wms.length? wmsAnt/wms.length:null,
+    ttaByFlow: FLOWS.map(f=>mean(byFlow(f).map(r=>num(r.tta)).filter(x=>x!=null))),
+    tramos: FLOWS.map(f=>({
+      t1:mean(byFlow(f).map(r=>num(r.t1)).filter(x=>x!=null))||0,
+      t2:mean(byFlow(f).map(r=>num(r.t2)).filter(x=>x!=null))||0,
+      t3:mean(byFlow(f).map(r=>num(r.t3)).filter(x=>x!=null))||0,
+    })),
+    slaByFlow: FLOWS.map(f=>{
+      const g=byFlow(f); const s=g.filter(r=>r.dentro==='Sí').length; const nn=g.filter(r=>r.dentro==='No').length;
+      return (s+nn)? s/(s+nn):null;
+    }),
+    trend:(()=>{
+      const m={}; R.forEach(r=>{ const d=r.fecha; const t=num(r.tta); if(d&&t!=null){(m[d]=m[d]||[]).push(t);} });
+      const days=Object.keys(m).sort();
+      return {days, vals:days.map(d=>mean(m[d]))};
+    })(),
+    errPct:(()=>{const e=R.filter(r=>r.error==='Sí').length; return R.length? e/R.length:null;})(),
+    recPer100:(()=>{const e=R.filter(r=>r.reclamo==='Sí').length; return R.length? e/R.length*100:null;})(),
+  };
+}
+
+function renderKPIs(k){
+  const cards=[
+    {label:'Pedidos registrados', num:k.n, unit:''},
+    {label:'TTA promedio', num:fmt(k.ttaAvg), unit:'min'},
+    {label:'TTA p90 · el 10% peor', num:fmt(k.ttaP90), unit:'min'},
+    {label:'Dentro de objetivo', num:pct(k.cumpl), unit:'', warn:k.cumpl!=null&&k.cumpl<0.9},
+    {label:'WMS preparado por anticipado', num:pct(k.wmsAnt), unit:''},
+  ];
+  document.getElementById('kpis').innerHTML = cards.map(c=>`
+    <div class="kpi ${c.warn?'warn':''}">
+      <div class="label">${c.label}</div>
+      <div class="num">${c.num}<span class="unit">${c.unit}</span></div>
+    </div>`).join('');
+}
+
+function renderQuality(k){
+  document.getElementById('quality').innerHTML=`
+    <div class="qstat ${k.errPct>0?'bad':''}"><div class="n">${pct(k.errPct)}</div><div class="l">Pedidos con error de control</div></div>
+    <div class="qstat ${k.recPer100>0?'bad':''}"><div class="n">${fmt(k.recPer100)}</div><div class="l">Reclamos cada 100 pedidos</div></div>`;
+}
+
+const baseOpts = {
+  responsive:true, maintainAspectRatio:false,
+  plugins:{legend:{display:false}, tooltip:{
+    backgroundColor:'#16211C', padding:10, cornerRadius:8, titleFont:{family:'Space Grotesk'},
+    bodyFont:{family:'Inter'} }},
+  animation:{duration:500}
+};
+const gridY={grid:{color:C.line,drawTicks:false},border:{display:false},ticks:{color:C.muted,font:{family:'Inter',size:11}}};
+const plainX={grid:{display:false},border:{color:C.line},ticks:{color:C.ink,font:{family:'Space Grotesk',size:12}}};
+
+function drawCharts(k){
+  Object.values(charts).forEach(c=>c&&c.destroy());
+  // Stacked tramos (horizontal)
+  charts.stack=new Chart(document.getElementById('stackChart'),{
+    type:'bar',
+    data:{labels:FLOWS,datasets:[
+      {label:'T1 Administrativo',data:k.tramos.map(t=>t.t1),backgroundColor:C.amber,borderRadius:3,barThickness:26},
+      {label:'T2 Preparación',data:k.tramos.map(t=>t.t2),backgroundColor:C.teal,borderRadius:3,barThickness:26},
+      {label:'T3 Espera',data:k.tramos.map(t=>t.t3),backgroundColor:C.gray,borderRadius:3,barThickness:26},
+    ]},
+    options:{...baseOpts,indexAxis:'y',
+      scales:{x:{stacked:true,...gridY,title:{display:true,text:'minutos',color:C.muted,font:{size:11}}},
+              y:{stacked:true,...plainX}},
+      plugins:{...baseOpts.plugins,tooltip:{...baseOpts.plugins.tooltip,callbacks:{
+        label:c=>` ${c.dataset.label}: ${fmt(c.raw)} min`}}}}
+  });
+  // TTA by flow
+  charts.tta=new Chart(document.getElementById('ttaChart'),{
+    type:'bar',
+    data:{labels:FLOWS,datasets:[{data:k.ttaByFlow,backgroundColor:[C.teal,'#3E8E77','#6BAE9C'],borderRadius:6,barThickness:52}]},
+    options:{...baseOpts,scales:{y:{...gridY,beginAtZero:true},x:plainX},
+      plugins:{...baseOpts.plugins,tooltip:{...baseOpts.plugins.tooltip,callbacks:{label:c=>` ${fmt(c.raw)} min`}}}}
+  });
+  // SLA by flow (horizontal %)
+  charts.sla=new Chart(document.getElementById('slaChart'),{
+    type:'bar',
+    data:{labels:FLOWS,datasets:[{data:k.slaByFlow.map(v=>v==null?0:v*100),
+      backgroundColor:k.slaByFlow.map(v=>v!=null&&v>=0.9?C.teal:C.amber),borderRadius:6,barThickness:32}]},
+    options:{...baseOpts,indexAxis:'y',
+      scales:{x:{...gridY,beginAtZero:true,max:100,ticks:{...gridY.ticks,callback:v=>v+'%'}},y:plainX},
+      plugins:{...baseOpts.plugins,tooltip:{...baseOpts.plugins.tooltip,callbacks:{label:c=>` ${Math.round(c.raw)}% dentro de objetivo`}}}}
+  });
+  // Trend
+  charts.trend=new Chart(document.getElementById('trendChart'),{
+    type:'line',
+    data:{labels:k.trend.days,datasets:[{data:k.trend.vals,borderColor:C.teal,backgroundColor:'rgba(15,110,86,.10)',
+      fill:true,tension:.3,pointBackgroundColor:C.teal,pointRadius:4,borderWidth:2.5}]},
+    options:{...baseOpts,scales:{y:{...gridY,beginAtZero:true},x:{...plainX,ticks:{...plainX.ticks,font:{family:'Inter',size:11}}}},
+      plugins:{...baseOpts.plugins,tooltip:{...baseOpts.plugins.tooltip,callbacks:{label:c=>` TTA ${fmt(c.raw)} min`}}}}
+  });
+}
+
+function render(rows){
+  const k=compute(rows);
+  renderKPIs(k); renderQuality(k); drawCharts(k);
+}
+
+// Carga de archivo
+document.getElementById('file').addEventListener('change',e=>{
+  const f=e.target.files[0]; if(!f)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',cellDates:true});
+      const sh=wb.Sheets['Registro']||wb.Sheets[wb.SheetNames[0]];
+      const raw=XLSX.utils.sheet_to_json(sh,{range:3,defval:null,raw:true});
+      const rows=raw.map(r=>({
+        flujo:r['Tipo de flujo'],
+        fecha:(()=>{const d=r['Fecha']; if(d instanceof Date){return d.toISOString().slice(0,10);} return d?String(d).slice(0,10):null;})(),
+        t1:num(r['T1 Admin. (min)']), t2:num(r['T2 Preparación (min)']), t3:num(r['T3 Espera (min)']),
+        tta:num(r['TTA (min)']), error:r['Error control'], reclamo:r['Reclamo'],
+        dentro:r['Dentro de objetivo'], antic:r['Anticipado'],
+      })).filter(r=>r.flujo);
+      if(!rows.length){alert('No se encontraron pedidos en la hoja "Registro". Revisá que uses la plantilla.');return;}
+      document.getElementById('src').innerHTML='Mostrando <b>'+f.name+'</b> · '+rows.length+' pedidos';
+      render(rows);
+    }catch(err){ alert('No se pudo leer el archivo: '+err.message); }
+  };
+  reader.readAsArrayBuffer(f);
+});
+document.querySelector('.filebtn').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();document.getElementById('file').click();}});
+
+render(SAMPLE);
+</script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+# Sistema
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Editores
+.vscode/
+.idea/
+
+# Datos fuente (los Excel se cargan en el navegador; no van al repo)
+*.xlsx
+*.xls
+*.csv
+
+# Vercel
+.vercel/
+
+# Dependencias (por si más adelante se agregan)
+node_modules/
