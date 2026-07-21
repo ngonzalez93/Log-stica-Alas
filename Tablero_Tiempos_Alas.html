@@ -96,6 +96,16 @@ footer{margin-top:30px;font-size:12px;color:var(--muted);text-align:center}
   .grid{grid-template-columns:1fr}
 }
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+/* Barra de filtros de fecha */
+.toolbar{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.filters{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;justify-content:flex-end}
+.fgrp{display:flex;flex-direction:column;gap:4px}
+.fgrp label{font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:600}
+.fgrp select,.fgrp input{padding:8px 10px;border:1px solid var(--line);border-radius:9px;font-family:'Inter';font-size:13px;background:var(--surface);color:var(--ink)}
+.fgrp select:focus,.fgrp input:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px var(--mint)}
+.fclear{padding:9px 14px;border:1px solid var(--line);background:none;border-radius:9px;color:var(--muted);font-size:13px;cursor:pointer;font-family:'Inter'}
+.fclear:hover{border-color:var(--teal);color:var(--teal)}
+.srcbadge{font-size:12px;color:var(--muted)}.srcbadge b{color:var(--ink);font-weight:600}
 </style>
 </head>
 <body>
@@ -106,13 +116,16 @@ footer{margin-top:30px;font-size:12px;color:var(--muted);text-align:center}
       <h1>Panel de tiempos de atención</h1>
       <div class="sub">Del arribo del cliente al cierre en el sistema, tramo por tramo.</div>
     </div>
-    <div class="uploader">
-      <label class="filebtn" for="file" tabindex="0">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-        Cargar mi Excel
-      </label>
-      <input type="file" id="file" accept=".xlsx,.xls">
-      <div class="srcbadge" id="src">Mostrando <b>datos de ejemplo</b></div>
+    <div class="toolbar">
+      <div class="filters">
+        <div class="fgrp"><label for="fYear">Año</label><select id="fYear"></select></div>
+        <div class="fgrp"><label for="fMonth">Mes</label><select id="fMonth"></select></div>
+        <div class="fgrp"><label for="fWeek">Semana</label><select id="fWeek"></select></div>
+        <div class="fgrp"><label for="fFrom">Desde</label><input type="date" id="fFrom"></div>
+        <div class="fgrp"><label for="fTo">Hasta</label><input type="date" id="fTo"></div>
+        <button class="fclear" id="fClear" type="button">Limpiar</button>
+      </div>
+      <div class="srcbadge" id="src">—</div>
     </div>
   </header>
 
@@ -155,7 +168,7 @@ footer{margin-top:30px;font-size:12px;color:var(--muted);text-align:center}
     </div>
   </div>
 
-  <footer>Panel autónomo · Cargá la plantilla de tiempos para recalcular todo. Los cálculos toman las columnas ya computadas del Excel.</footer>
+  <footer>Los datos se leen de la base (Supabase). Usá los filtros para acotar el período. Para cargar nuevos registros, usá <b>Importar datos</b> en la barra superior.</footer>
 </div>
 
 <script>
@@ -297,32 +310,58 @@ function render(rows){
   renderKPIs(k); renderQuality(k); drawCharts(k);
 }
 
-// Carga de archivo
-document.getElementById('file').addEventListener('change',e=>{
-  const f=e.target.files[0]; if(!f)return;
-  const reader=new FileReader();
-  reader.onload=ev=>{
-    try{
-      const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',cellDates:true});
-      const sh=wb.Sheets['Registro']||wb.Sheets[wb.SheetNames[0]];
-      const raw=XLSX.utils.sheet_to_json(sh,{range:3,defval:null,raw:true});
-      const rows=raw.map(r=>({
-        flujo:r['Tipo de flujo'],
-        fecha:(()=>{const d=r['Fecha']; if(d instanceof Date){return d.toISOString().slice(0,10);} return d?String(d).slice(0,10):null;})(),
-        t1:num(r['T1 Admin. (min)']), t2:num(r['T2 Preparación (min)']), t3:num(r['T3 Espera (min)']),
-        tta:num(r['TTA (min)']), error:r['Error control'], reclamo:r['Reclamo'],
-        dentro:r['Dentro de objetivo'], antic:r['Anticipado'],
-      })).filter(r=>r.flujo);
-      if(!rows.length){alert('No se encontraron pedidos en la hoja "Registro". Revisá que uses la plantilla.');return;}
-      document.getElementById('src').innerHTML='Mostrando <b>'+f.name+'</b> · '+rows.length+' pedidos';
-      render(rows);
-    }catch(err){ alert('No se pudo leer el archivo: '+err.message); }
-  };
-  reader.readAsArrayBuffer(f);
-});
-document.querySelector('.filebtn').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();document.getElementById('file').click();}});
+// ---------- Filtros de fecha ----------
+const MONTHS=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const $=id=>document.getElementById(id);
+function ymd(s){ if(!s)return null; const p=String(s).slice(0,10).split('-').map(Number); return p.length===3&&p[0]?{y:p[0],m:p[1],d:p[2]}:null; }
+function isoWeek(s){ const p=ymd(s); if(!p)return null; const dt=new Date(Date.UTC(p.y,p.m-1,p.d)); const day=(dt.getUTCDay()+6)%7; dt.setUTCDate(dt.getUTCDate()-day+3); const ft=new Date(Date.UTC(dt.getUTCFullYear(),0,4)); return 1+Math.round(((dt-ft)/864e5-3+((ft.getUTCDay()+6)%7))/7); }
+function opt(v,l){ return '<option value="'+v+'">'+l+'</option>'; }
 
-render(SAMPLE);
+let ALL=[];
+function buildFilters(){
+  const years=[...new Set(ALL.map(r=>{const p=ymd(r.fecha);return p&&p.y;}).filter(Boolean))].sort((a,b)=>b-a);
+  $('fYear').innerHTML=opt('','Todos')+years.map(y=>opt(y,y)).join('');
+  $('fMonth').innerHTML=opt('','Todos')+MONTHS.map((n,i)=>opt(i+1,n)).join('');
+  const weeks=[...new Set(ALL.map(r=>isoWeek(r.fecha)).filter(Boolean))].sort((a,b)=>a-b);
+  $('fWeek').innerHTML=opt('','Todas')+weeks.map(w=>opt(w,'Semana '+w)).join('');
+}
+function passes(r){
+  const p=ymd(r.fecha), y=$('fYear').value, m=$('fMonth').value, w=$('fWeek').value, from=$('fFrom').value, to=$('fTo').value;
+  const iso=String(r.fecha||'').slice(0,10);
+  if(y&&(!p||p.y!==+y))return false;
+  if(m&&(!p||p.m!==+m))return false;
+  if(w&&isoWeek(r.fecha)!==+w)return false;
+  if(from&&(!iso||iso<from))return false;
+  if(to&&(!iso||iso>to))return false;
+  return true;
+}
+function apply(){
+  const rows=ALL.filter(passes);
+  render(rows);
+  $('src').innerHTML='<b>'+rows.length+'</b> de '+ALL.length+' registros';
+  if(window.gsap) gsap.from('.kpi',{y:10,opacity:0,duration:.4,stagger:.05,ease:'power2.out',clearProps:'all'});
+}
+['fYear','fMonth','fWeek','fFrom','fTo'].forEach(id=>$(id).addEventListener('change',apply));
+$('fClear').addEventListener('click',()=>{['fYear','fMonth','fWeek','fFrom','fTo'].forEach(id=>$(id).value='');apply();});
+
+// ---------- Fuente de datos: Supabase ----------
+const cfg=window.SUPABASE_CONFIG||{};
+const sbReady=window.supabase&&cfg.url&&cfg.url.indexOf('TU-PROYECTO')===-1;
+const sb=sbReady?window.supabase.createClient(cfg.url,cfg.anonKey):null;
+const sino=b=>b===true?'Sí':(b===false?'No':null);
+function mapRow(r){ return { flujo:r.tipo_flujo, fecha:r.fecha?String(r.fecha).slice(0,10):null,
+  t1:r.t1_admin_min, t2:r.t2_preparacion_min, t3:r.t3_espera_min, tta:r.tta_min,
+  error:sino(r.error_control), reclamo:sino(r.reclamo), dentro:sino(r.dentro_objetivo), antic:sino(r.anticipado) }; }
+
+async function load(){
+  if(!sb){ ALL=SAMPLE.slice(); buildFilters(); apply(); $('src').innerHTML='<b>ejemplo</b> · Supabase sin configurar'; return; }
+  $('src').textContent='cargando…';
+  const {data,error}=await sb.from('tiempos_atencion').select('*').order('fecha',{ascending:true});
+  if(error){ $('src').textContent='error al leer la base'; console.error(error); alert('No se pudo leer la base: '+error.message); ALL=[]; buildFilters(); apply(); return; }
+  ALL=(data||[]).map(mapRow).filter(r=>r.flujo);
+  buildFilters(); apply();
+}
+load();
 </script>
 </body>
 </html>
