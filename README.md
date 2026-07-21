@@ -81,6 +81,20 @@ Si querés guardar los datos en Supabase (en vez de subir el Excel cada vez):
 > Los informes hoy siguen leyendo del Excel. Conectarlos a estas tablas es un
 > paso posterior; el esquema queda listo para cuando se decida dar ese salto.
 
+### 1c. Importación de Excel a la base (Centro de Importación)
+
+1. Corré también [`supabase/import.sql`](supabase/import.sql) en el SQL Editor: agrega
+   a cada tabla la columna `row_hash` (huella de la fila) para **evitar duplicados**.
+2. En el menú (como admin) aparece **Importar datos** → [`importar.html`](importar.html):
+   - Elegís el módulo → ves la **guía de columnas** que debe tener el Excel.
+   - Si falta una columna **obligatoria**, no deja importar y te dice **cuál** falta.
+   - Detecta y **omite duplicados** comparando la **fila completa** (dentro del
+     archivo y contra lo ya cargado en la base).
+   - Muestra el **progreso en %** y un **check azul** al terminar.
+3. La definición de columnas por módulo está en [`assets/import-spec.js`](assets/import-spec.js).
+   *Pedidos pendientes* y *Atención — Fábrica* usan un **formato propuesto** (sus
+   informes no tenían Excel); ajustá tu planilla a esos nombres de columna.
+
 ### 2. Git
 
 ```powershell
