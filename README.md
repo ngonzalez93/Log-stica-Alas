@@ -49,6 +49,19 @@ si no hay sesión de Supabase, redirige a `index.html`. Si Supabase todavía
    (email + contraseña). Recomendado: en **Authentication → Providers → Email**,
    desactivá "Enable sign-ups" para que nadie se registre solo.
 
+### 1b. Base de datos (opcional, para centralizar datos)
+
+Si querés guardar los datos en Supabase (en vez de subir el Excel cada vez):
+
+1. Supabase → **SQL Editor → New query**.
+2. Pegá todo el contenido de [`supabase/schema.sql`](supabase/schema.sql) y **Run**.
+3. Crea 6 tablas (una por informe) con RLS: solo el equipo logueado ve los datos.
+4. Para cargar datos: **Table Editor → (tabla) → Insert → Import data from CSV**
+   (exportá cada hoja del Excel a CSV).
+
+> Los informes hoy siguen leyendo del Excel. Conectarlos a estas tablas es un
+> paso posterior; el esquema queda listo para cuando se decida dar ese salto.
+
 ### 2. Git
 
 ```powershell
