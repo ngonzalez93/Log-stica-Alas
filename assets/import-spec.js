@@ -84,16 +84,16 @@ window.IMPORT_SPECS = {
   },
 
   fabrica: {
-    key: "fabrica", title: "Atención — Fábrica", table: "atencion_fabrica", proposed: true,
+    key: "fabrica", title: "Atención — Fábrica", table: "atencion_fabrica", sheetHint: "Base",
     columns: [
-      { header: "Fecha",             field: "fecha",           type: "date",   required: true  },
-      { header: "Estado",            field: "estado",          type: "text",   required: false },
-      { header: "TTA (min)",         field: "tta_min",         type: "number", required: false },
-      { header: "Espera (min)",      field: "espera_min",      type: "number", required: false },
-      { header: "Carga (min)",       field: "carga_min",       type: "number", required: false },
-      { header: "Objetivo (min)",    field: "objetivo_min",    type: "int",    required: false },
-      { header: "Dentro de objetivo",field: "dentro_objetivo", type: "bool",   required: false },
-      { header: "Anticipado",        field: "anticipado",      type: "bool",   required: false }
+      { header: "Turno",             field: "turno",             type: "text", required: true  },
+      { header: "Fecha_Registro",    field: "fecha",             type: "date", required: true  },
+      { header: "Hora_Registro",     field: "hora_registro",     type: "time", required: false },
+      { header: "Hora_Inicio_Carga", field: "hora_inicio_carga", type: "time", required: false },
+      { header: "Hora_Entregado",    field: "hora_entregado",    type: "time", required: false },
+      { header: "Ruc_Cliente",       field: "ruc_cliente",       type: "text", required: false },
+      { header: "Nom_Cliente",       field: "nom_cliente",       type: "text", required: false },
+      { header: "Estado",            field: "estado",            type: "text", required: true  }
     ]
   }
 };

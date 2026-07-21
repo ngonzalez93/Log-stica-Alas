@@ -85,6 +85,9 @@ Si querés guardar los datos en Supabase (en vez de subir el Excel cada vez):
 
 1. Corré también [`supabase/import.sql`](supabase/import.sql) en el SQL Editor: agrega
    a cada tabla la columna `row_hash` (huella de la fila) para **evitar duplicados**.
+   Y [`supabase/fabrica.sql`](supabase/fabrica.sql): redefine la tabla de **Atención
+   Fábrica** con la estructura real del Excel *Base ATC Fabrica Alas* (turno, fecha,
+   horas de registro/inicio de carga/entrega, cliente, estado).
 2. La importación está **dentro de cada dashboard**: en la barra superior azul,
    botón **Importar datos** (disponible para cualquier usuario, no solo admin).
    Abre un modal que:

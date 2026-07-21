@@ -12,7 +12,7 @@
   var client = configured ? window.supabase.createClient(cfg.url, cfg.anonKey) : null;
   var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   var hasGSAP = !!window.gsap && !reduce;
-  var TYPE_LABEL = { text:"Texto", number:"Número", int:"Entero", date:"Fecha", bool:"Sí / No" };
+  var TYPE_LABEL = { text:"Texto", number:"Número", int:"Entero", date:"Fecha", time:"Hora", bool:"Sí / No" };
   var state = { spec:null, recs:null, fileDupes:0 };
   var built = false;
 
@@ -43,12 +43,23 @@
     if(["no","n","false","falso","0"].indexOf(s)!==-1) return false;
     return null;
   }
+  function toMinutes(v){  // hora (fracción de día de Excel, Date o "HH:MM") → minutos desde medianoche
+    if(v==null||v==="") return null;
+    if(v instanceof Date && !isNaN(v)) return v.getUTCHours()*60+v.getUTCMinutes()+v.getUTCSeconds()/60;
+    if(typeof v==="number") return (v>=0 && v<2) ? v*1440 : v;
+    var s=String(v).trim();
+    var m=s.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+    if(m) return (+m[1])*60+(+m[2])+(m[3]?(+m[3])/60:0);
+    var n=parseNumber(s); if(n!=null) return (n>=0&&n<2)?n*1440:n;
+    return null;
+  }
   function coerce(v, type){
     if(v==null||(typeof v==="string"&&v.trim()==="")) return null;
     if(type==="text") return String(v).trim();
     if(type==="number") return parseNumber(v);
     if(type==="int"){ var n=parseNumber(v); return n==null?null:Math.round(n); }
     if(type==="date") return toISO(v);
+    if(type==="time") return toMinutes(v);
     if(type==="bool") return toBool(v);
     return v;
   }
@@ -170,7 +181,7 @@
   function analyze(wb, spec){
     var best=null;
     wb.SheetNames.forEach(function(name){
-      var aoa=XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,raw:true,cellDates:true,blankrows:false});
+      var aoa=XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,raw:true,blankrows:false});
       var limit=Math.min(aoa.length,25);
       for(var r=0;r<limit;r++){
         var normed=(aoa[r]||[]).map(norm), req=0, opt=0;
@@ -220,7 +231,7 @@
     var box=document.getElementById("iwValidation");
     box.innerHTML='<div class="iw-panel info">Leyendo «'+esc(file.name)+'»…</div>';
     var rd=new FileReader();
-    rd.onload=function(ev){ try{ var wb=XLSX.read(new Uint8Array(ev.target.result),{type:"array",cellDates:true}); showValidation(validateAndBuild(wb)); }
+    rd.onload=function(ev){ try{ var wb=XLSX.read(new Uint8Array(ev.target.result),{type:"array"}); showValidation(validateAndBuild(wb)); }
       catch(e){ box.innerHTML='<div class="iw-panel err">No se pudo leer: '+esc(e.message)+'</div>'; } };
     rd.readAsArrayBuffer(file);
   }
