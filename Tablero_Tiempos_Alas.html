@@ -356,6 +356,7 @@ function mapRow(r){ return { flujo:r.tipo_flujo, fecha:r.fecha?String(r.fecha).s
 async function load(){
   if(!sb){ ALL=SAMPLE.slice(); buildFilters(); apply(); $('src').innerHTML='<b>ejemplo</b> · Supabase sin configurar'; return; }
   $('src').textContent='cargando…';
+  await sb.auth.getSession();
   const {data,error}=await sb.from('tiempos_atencion').select('*').order('fecha',{ascending:true});
   if(error){ $('src').textContent='error al leer la base'; console.error(error); alert('No se pudo leer la base: '+error.message); ALL=[]; buildFilters(); apply(); return; }
   ALL=(data||[]).map(mapRow).filter(r=>r.flujo);

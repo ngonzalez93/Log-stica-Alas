@@ -348,7 +348,7 @@ $('fClear')&&$('fClear').addEventListener('click',()=>{['fYear','fMonth','fWeek'
 async function fetchAll(table){const PAGE=1000;let from=0,all=[];while(true){const r=await sb.from(table).select('*').range(from,from+PAGE-1);if(r.error)throw r.error;all=all.concat(r.data||[]);if(!r.data||r.data.length<PAGE)break;from+=PAGE;}return all;}
 async function load(){
   if(!sb){buildFilters();apply();return;}
-  try{const rows=await fetchAll('atencion_fabrica');ALLROWS=rows.map(mapRow);}
+  try{await sb.auth.getSession();const rows=await fetchAll('atencion_fabrica');ALLROWS=rows.map(mapRow);}
   catch(e){console.error(e);alert('No se pudo leer la base: '+(e.message||e));ALLROWS=[];}
   buildFilters();apply();
 }
