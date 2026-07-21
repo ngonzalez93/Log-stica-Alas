@@ -12,6 +12,12 @@ Desktop.ini
 *.xls
 *.csv
 
+# Documentos y secretos que no deben subirse
+*.pdf
+recovery-codes.txt
+*secret*
+*credential*
+
 # Vercel
 .vercel/
 
